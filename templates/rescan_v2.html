@@ -1,0 +1,307 @@
+{% extends "base_v2.html" %}
+
+{% block title %}Rescan Checker - Command Center V2{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Base Card Box (Dark Mode Default: Senada dengan Dashboard & Sidebar) */
+  .rescan-card-box {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25) !important;
+    color: #f8fafc !important;
+  }
+
+  /* Light Mode Overrides */
+  body.light-mode .rescan-card-box {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Text & Label Styling */
+  .rescan-label {
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+  body.light-mode .rescan-label {
+    color: #475569 !important;
+  }
+
+  /* Form Control Inputs & Textarea */
+  .rescan-input {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .rescan-input:focus {
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.25) !important;
+    outline: none !important;
+  }
+  .rescan-input::placeholder {
+    color: #64748b !important;
+  }
+
+  body.light-mode .rescan-input {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+  body.light-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.2);
+  }
+
+  /* Tombol Aksi */
+  .btn-rescan-primary {
+    background-color: #0891b2 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3) !important;
+  }
+  .btn-rescan-primary:hover {
+    background-color: #0e7490 !important;
+  }
+
+  .btn-rescan-secondary {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border: 1px solid #334155 !important;
+  }
+  .btn-rescan-secondary:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+  }
+
+  body.light-mode .btn-rescan-secondary {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+  }
+  body.light-mode .btn-rescan-secondary:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  /* Tabel Hasil */
+  .rescan-table-container {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+  }
+  body.light-mode .rescan-table-container {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .rescan-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .rescan-table th {
+    background-color: #1e293b !important;
+    color: #38bdf8 !important;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+  }
+  body.light-mode .rescan-table th {
+    background-color: #f1f5f9 !important;
+    color: #0284c7 !important;
+  }
+
+  .rescan-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #1e293b !important;
+    color: #f8fafc !important;
+  }
+  body.light-mode .rescan-table td {
+    border-bottom-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  .container-text-highlight {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.5px !important;
+  }
+  body.light-mode .container-text-highlight {
+    color: #0f172a !important;
+  }
+
+  .badge-status-exist {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    font-weight: 700;
+  }
+  .badge-status-missing {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- HEADER & INPUT CARD -->
+    <div class="rescan-card-box">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass text-cyan-500"></i> Rescan Checker
+            </h1>
+            <p class="text-sm mt-1 opacity-75">Tempel pesan dari grup WhatsApp X-Ray dan sesuaikan periode tanggal pencarian di database.</p>
+        </div>
+
+        <!-- FILTER TANGGAL OPTIONAL -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block rescan-label mb-2">Tanggal Mulai Scan (Opsional)</label>
+                <input type="date" id="startDate" class="w-full rescan-input px-4 py-2.5 text-sm">
+            </div>
+            <div>
+                <label class="block rescan-label mb-2">Tanggal Akhir Scan (Opsional)</label>
+                <input type="date" id="endDate" class="w-full rescan-input px-4 py-2.5 text-sm">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="block rescan-label mb-2">Pesan WhatsApp / Text Input</label>
+            <textarea id="raw_text" rows="5" class="w-full rescan-input p-4 font-mono text-sm" placeholder="Contoh:
+Update Pemindaian:
+1. MSDU6396239 = Status Belum ada hasil pindai
+2. EMCU8440127 = Status Belum ada hasil pindai"></textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="checkDatabase()" class="px-5 py-2.5 btn-rescan-primary font-medium text-sm rounded-lg flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-search"></i> Periksa Database
+            </button>
+            <button onclick="clearText()" class="px-5 py-2.5 btn-rescan-secondary font-medium text-sm rounded-lg flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-eraser"></i> Bersihkan
+            </button>
+        </div>
+    </div>
+
+    <!-- RESULTS CARD -->
+    <div class="rescan-card-box hidden" id="result_card">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-cyan-500"></i> Hasil Pengecekan Database
+            </h2>
+            <span id="summary_badge" class="text-xs px-3 py-1 rounded-full font-mono bg-slate-800 text-slate-300 border border-slate-700">0 Kontainer diperiksa</span>
+        </div>
+
+        <div class="rescan-table-container">
+            <div class="overflow-x-auto">
+                <table class="rescan-table text-left text-sm">
+                    <thead>
+                        <tr>
+                            <th class="text-center">#</th>
+                            <th>Nomor Container</th>
+                            <th class="text-center">Status Database</th>
+                            <th class="text-center">Jumlah Record</th>
+                            <th>Scan Terakhir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result_tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function clearText() {
+        document.getElementById('raw_text').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('result_card').classList.add('hidden');
+    }
+
+    function checkDatabase() {
+        const text = document.getElementById('raw_text').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        const matches = text.match(/[A-Z]{4}\d{7}/gi);
+
+        if (!matches || matches.length === 0) {
+            alert('Nomor kontainer standar (4 huruf + 7 angka) tidak ditemukan pada teks!');
+            return;
+        }
+
+        const uniqueContainers = [...new Set(matches.map(c => c.toUpperCase()))];
+        const tbody = document.getElementById('result_tbody');
+        const resultCard = document.getElementById('result_card');
+        
+        resultCard.classList.remove('hidden');
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-xl mr-2"></i>Memeriksa ${uniqueContainers.length} kontainer...</td></tr>`;
+
+        fetch('/api/rescan/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                containers: uniqueContainers,
+                start_date: start,
+                end_date: end 
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-rose-500">${data.error}</td></tr>`;
+                return;
+            }
+
+            document.getElementById('summary_badge').innerText = `${data.results.length} Kontainer Ditemukan`;
+            let html = '';
+
+            data.results.forEach((item, index) => {
+                const count = item.records.length;
+                const hasRecord = count > 0;
+                const statusBadge = hasRecord 
+                    ? '<span class="px-2.5 py-1 text-xs rounded border badge-status-exist"><i class="fa-solid fa-check mr-1"></i> Ada Data</span>' 
+                    : '<span class="px-2.5 py-1 text-xs rounded border badge-status-missing"><i class="fa-solid fa-xmark mr-1"></i> Belum Ditemukan</span>';
+                const lastScan = hasRecord ? item.records[0].jam_scan : '-';
+
+                html += `
+                    <tr>
+                        <td class="text-center font-mono opacity-60">${index + 1}</td>
+                        <td class="container-text-highlight">${item.container}</td>
+                        <td class="text-center">${statusBadge}</td>
+                        <td class="text-center font-mono">${count} Log</td>
+                        <td class="font-mono">${lastScan}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-rose-500">Gagal memeriksa: ${err}</td></tr>`;
+        });
+    }
+</script>
+{% endblock %}

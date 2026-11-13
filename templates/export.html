@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Export Excel - Dashboard{% endblock %}
+
+{% block content %}
+<style>
+  .export-card {
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .filter-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+  
+  .filter-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    font-weight: 500;
+  }
+  
+  .status-badge.all {
+    background: #e7f3ff;
+    color: #0066cc;
+  }
+  
+  .status-badge.ok {
+    background: #e6f9ed;
+    color: #28a745;
+  }
+  
+  .status-badge.nok {
+    background: #ffe6e6;
+    color: #dc3545;
+  }
+  
+  .status-badge.active {
+    border-color: currentColor;
+    transform: scale(1.05);
+  }
+  
+  .btn-export {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    color: white;
+  }
+  
+  .btn-export:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .preview-section {
+    margin-top: 2rem;
+  }
+  
+  .preview-info {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+  
+  .table-preview {
+    font-size: 0.85rem;
+  }
+  
+  .table-preview table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    padding: 0.75rem;
+  }
+  
+  .table-preview table tbody td {
+    padding: 0.5rem;
+  }
+  
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .spinner-border {
+    color: #28a745;
+  }
+</style>
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <!-- Header -->
+      <div class="mb-4">
+        <h2 class="text-primary fw-bold">
+          <i class="fas fa-download me-2"></i>Export Data Excel
+        </h2>
+        <p class="text-muted">Pilih filter tanggal dan status, lalu download data logs dalam format Excel</p>
+      </div>
+
+      <!-- Filter Card -->
+      <div class="card export-card">
+        <div class="card-body">
+          <div class="filter-section">
+            <div class="row">
+              <!-- Start Date -->
+              <div class="col-md-6">
+                <div class="filter-group">
+                  <label for="startDate">Tanggal Mulai</label>
+                  <input type="date" id="startDate" class="form-control" />
+                </div>
+              </div>
+
+              <!-- End Date -->
+              <div class="col-md-6">
+                <div class="filter-group">
+                  <label for="endDate">Tanggal Akhir</label>
+                  <input type="date" id="endDate" class="form-control" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-group">
+              <label>Status Filter</label>
+              <div class="d-flex gap-2 flex-wrap">
+                <div class="status-badge all active" data-status="all">
+                  <i class="fas fa-list me-1"></i>Semua Data
+                </div>
+                <div class="status-badge ok" data-status="ok">
+                  <i class="fas fa-check-circle me-1"></i>OK Only
+                </div>
+                <div class="status-badge nok" data-status="nok">
+                  <i class="fas fa-times-circle me-1"></i>NOK Only
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="filter-group mt-4">
+              <button id="previewBtn" class="btn btn-export">
+                <i class="fas fa-eye me-2"></i>Preview Data
+              </button>
+              <button id="downloadBtn" class="btn btn-export" style="margin-left: 0.5rem;">
+                <i class="fas fa-download me-2"></i>Download Excel
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading Spinner -->
+          <div id="loading" class="loading">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Mengambil data...</p>
+          </div>
+
+          <!-- Preview Section -->
+          <div id="previewSection" class="preview-section" style="display: none;">
+            <div class="preview-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Preview Data:</strong> Menampilkan hingga 100 baris pertama. Download untuk mendapatkan data lengkap.
+            </div>
+            <div class="table-preview table-responsive">
+              <table id="previewTable" class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Container</th>
+                    <th>Plat</th>
+                    <th>Status</th>
+                    <th>Jam Scan</th>
+                    <th>Gambar</th>
+                  </tr>
+                </thead>
+                <tbody id="previewBody">
+                </tbody>
+              </table>
+              <div id="noDataMsg" class="alert alert-warning" style="display: none;">
+                <i class="fas fa-exclamation-triangle me-2"></i>Tidak ada data untuk filter yang dipilih.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedStatus = 'all';
+const today = new Date().toISOString().split('T')[0];
+
+// Set default dates (today - 7 days to today)
+document.getElementById('endDate').value = today;
+const sevenDaysAgo = new Date();
+sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+document.getElementById('startDate').value = sevenDaysAgo.toISOString().split('T')[0];
+
+// Status filter click handlers
+document.querySelectorAll('.status-badge').forEach(badge => {
+  badge.addEventListener('click', function() {
+    document.querySelectorAll('.status-badge').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    selectedStatus = this.dataset.status;
+  });
+});
+
+// Preview button
+document.getElementById('previewBtn').addEventListener('click', function() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+
+  if (!startDate || !endDate) {
+    alert('Mohon pilih tanggal mulai dan tanggal akhir');
+    return;
+  }
+
+  if (new Date(startDate) > new Date(endDate)) {
+    alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+    return;
+  }
+
+  showLoading(true);
+  
+  // Fetch data from API to show preview
+  const params = new URLSearchParams({
+    start_date: startDate,
+    end_date: endDate,
+    status: selectedStatus
+  });
+
+  fetch(`/api/logs/filter?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('API Error');
+    return response.json();
+  })
+  .then(data => {
+    displayPreview(data);
+    showLoading(false);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Gagal mengambil data: ' + error.message);
+    showLoading(false);
+  });
+});
+
+// Download button
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+
+  if (!startDate || !endDate) {
+    alert('Mohon pilih tanggal mulai dan tanggal akhir');
+    return;
+  }
+
+  if (new Date(startDate) > new Date(endDate)) {
+    alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+    return;
+  }
+
+  // Generate download URL and trigger download
+  const params = new URLSearchParams({
+    start_date: startDate,
+    end_date: endDate,
+    status: selectedStatus
+  });
+
+  window.location.href = `/export/excel?${params.toString()}`;
+});
+
+function showLoading(show) {
+  document.getElementById('loading').style.display = show ? 'block' : 'none';
+}
+
+function displayPreview(data) {
+  const tbody = document.getElementById('previewBody');
+  const noDataMsg = document.getElementById('noDataMsg');
+  const previewSection = document.getElementById('previewSection');
+  
+  tbody.innerHTML = '';
+  
+  if (!data || data.length === 0) {
+    noDataMsg.style.display = 'block';
+    previewSection.style.display = 'block';
+    return;
+  }
+
+  noDataMsg.style.display = 'none';
+  
+  // Show first 100 rows
+  data.slice(0, 100).forEach((row, index) => {
+    const tr = document.createElement('tr');
+    const statusClass = row.status === 'OK' ? 'status-ok' : 'status-nok';
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${row.container || '-'}</td>
+      <td>${row.plate || '-'}</td>
+      <td><span class="${statusClass}">${row.status || '-'}</span></td>
+      <td>${formatDateTime(row.jam_scan)}</td>
+      <td>${row.image_count || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (data.length > 100) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td colspan="6" class="text-center text-muted">
+        <em>... dan ${data.length - 100} data lainnya (download untuk melihat semua)</em>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  previewSection.style.display = 'block';
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString('id-ID', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateStr;
+  }
+}
+</script>
+
+{% endblock %}

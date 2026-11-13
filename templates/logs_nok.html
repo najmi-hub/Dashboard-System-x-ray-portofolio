@@ -1,0 +1,130 @@
+{% extends "detail.html" %}
+
+{% block title %}Detail Log NOK{% endblock %}
+
+{% block content %}
+<style>
+  /* Reuse same style as logs_ok for consistency */
+  .table-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  thead {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    color: white;
+  }
+
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  tbody tr:hover {
+    background: #fee2e2;
+    transition: 0.2s;
+  }
+
+  .filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  select, input[type="text"], button {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+  }
+
+  button {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
+</style>
+
+<h1 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+  Detail Log (NOK)
+  <form method="get" action="{{ url_for('logs_nok') }}">
+    <select name="filter" onchange="this.form.submit()">
+      <option value="">-- Filter --</option>
+      <option value="newest" {% if filter == 'newest' %}selected{% endif %}>Terbaru</option>
+      <option value="oldest" {% if filter == 'oldest' %}selected{% endif %}>Terlama</option>
+      <option value="reason" {% if filter == 'reason' %}selected{% endif %}>Berdasarkan Detail Alasan</option>
+    </select>
+  </form>
+</h1>
+
+<p><strong>Total NOK: {{ logs|length }}</strong></p>
+
+<div class="filters">
+  <form method="get" action="">
+    <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Cari..." />
+    <input type="hidden" name="filter" value="{{ request.args.get('filter', '') }}">
+    <button type="submit">Cari</button>
+  </form>
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>ID Scan</th>
+        <th>Nomor Container</th>
+        <th>Nomor Plat</th>
+        <th>Scan Status</th>
+        <th>Jam Scan</th>
+        <th>Scan Time</th>
+        <th>Overall Time</th>
+        <th>Jam Update</th>
+        <th>Selisih Waktu</th>
+        <th>Jumlah Gambar</th>
+        <th>Status</th>
+        <th>Detail Alasan</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.id }}</td>
+        <td>{{ log.container }}</td>
+        <td>{{ log.plate }}</td>
+        <td>{{ log.folder_status }}</td>
+        <td>{{ log.time }}</td>
+        <td>{{ log.scan_diff }}</td>
+        <td>{{ log.overall_diff }}</td>
+        <td>{{ log.update_time }}</td>
+        <td>{{ log.time_diff }}</td>
+        <td>{{ log.image_count }}</td>
+        <td>{{ log.status }}</td>
+        <td>{{ log.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

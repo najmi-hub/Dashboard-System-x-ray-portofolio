@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Gambar Scan - {{ timestamp }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        background-color: #f8f9fa;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .image-container:hover {
+        transform: scale(1.02);
+    }
+    .image-container img {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+    }
+    .image-number {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+    .image-name {
+        padding: 10px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        font-size: 12px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .loading-text {
+        color: #6c757d;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800">Gambar Scan - {{ timestamp }}</h1>
+        <div>
+            <span class="badge {{ 'bg-success' if folder_status == 'SUCCESS' else 'bg-danger' }} me-2">
+                Scan Status: {{ folder_status }}
+            </span>
+            <span class="badge {{ 'bg-info' if status == 'OK' else 'bg-warning' }}">
+                Status: {{ status }} ({{ image_count }} gambar)
+            </span>
+        </div>
+    </div>
+    
+    {% if images %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Ditemukan {{ images|length }} gambar untuk timestamp {{ timestamp }}
+    </div>
+    
+    <div class="row">
+        {% for image_file in images %}
+        {% set image_name = image_file.split('.')[0] %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                <div class="image-container">
+                    <span class="image-number">#{{ loop.index }}</span>
+                    <img src="{{ url_for('api_realtime_image', timestamp=timestamp, image_name=image_name) }}" 
+                         class="card-img-top" 
+                         alt="{{ image_file }}"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="loading-text" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i> Gambar tidak dapat dimuat
+                    </div>
+                </div>
+                <div class="image-name">{{ image_file }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        <i class="fas fa-exclamation-triangle"></i> Tidak ditemukan gambar untuk timestamp {{ timestamp }}
+    </div>
+    {% endif %}
+    
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('realtime_monitoring') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> Kembali ke Monitoring
+        </a>
+    </div>
+</div>
+{% endblock %}

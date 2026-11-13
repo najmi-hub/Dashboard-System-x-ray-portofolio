@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Operasional - Command Center V2</title>
+    <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200">
+
+    <!-- NAVBAR -->
+    <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20 text-blue-600 dark:text-blue-400">
+                <i class="fa-solid fa-chart-column text-xl"></i>
+            </div>
+            <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">Command Center V2</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="{{ url_for('index_v2') }}" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">Dashboard</a>
+            <a href="{{ url_for('rescan_checker') }}" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">Rescan Checker</a>
+            <a href="{{ url_for('analytics_page') }}" class="px-4 py-2 text-sm font-medium bg-blue-600/10 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-lg">Analisa Grafik</a>
+            <a href="{{ url_for('export_page') }}" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">Export Data</a>
+            <button onclick="toggleTheme()" class="p-2 text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-lg transition">
+                <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+            <a href="{{ url_for('logout') }}" class="px-4 py-2 text-sm font-medium text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition">Logout</a>
+        </div>
+    </nav>
+
+    <!-- CONTENT CONTAINER -->
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+
+        <!-- HEADER -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm dark:shadow-xl">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-blue-600 dark:text-blue-400"></i> Analisis Trafik Scan Gate
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Visualisasi historis transaksi scan 30 hari terakhir dan distribusi volume jam harian.</p>
+            </div>
+            <a href="{{ url_for('index_v2') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-sm rounded-lg border border-slate-300 dark:border-slate-700 transition">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard
+            </a>
+        </div>
+
+        <!-- GRAFIK 30 HARI -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm dark:shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-regular fa-calendar-days text-emerald-500"></i> Tren Trafik Harian (30 Hari Terakhir)
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Total akumulasi transaksi OK vs NOK per hari</p>
+                </div>
+                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Monthly History</span>
+            </div>
+            <div class="relative h-80 w-full">
+                <canvas id="monthlyLineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- GRAFIK HOURLY -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm dark:shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock text-cyan-500"></i> Volume Scan Per Jam (Hari Ini)
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Distribusi lalu lintas scan per jam (00:00 - 23:00)</p>
+                </div>
+                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">Realtime Sync</span>
+            </div>
+            <div class="relative h-80 w-full">
+                <canvas id="hourlyBarChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function updateThemeIcon() {
+            const icon = document.getElementById('themeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                icon.className = 'fa-solid fa-moon text-slate-600';
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateThemeIcon();
+            location.reload();
+        }
+
+        updateThemeIcon();
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const labelColor = isDark ? '#f8fafc' : '#0f172a';
+
+            const monthlyLabels = {{ labels | tojson }};
+            const monthlyOkData = {{ ok_data | tojson }};
+            const monthlyNokData = {{ nok_data | tojson }};
+
+            const ctxMonthly = document.getElementById('monthlyLineChart').getContext('2d');
+            new Chart(ctxMonthly, {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [
+                        {
+                            label: 'Scan OK',
+                            data: monthlyOkData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Scan NOK',
+                            data: monthlyNokData,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: labelColor, font: { weight: 'bold' } } }
+                    }
+                }
+            });
+
+            const ctxHourly = document.getElementById('hourlyBarChart').getContext('2d');
+            const hourlyChart = new Chart(ctxHourly, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Scan OK',
+                            data: [],
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Scan NOK',
+                            data: [],
+                            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: labelColor, font: { weight: 'bold' } } }
+                    }
+                }
+            });
+
+            async function loadHourlyData() {
+                try {
+                    const res = await fetch('/api/analytics/hourly');
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    hourlyChart.data.labels = data.labels;
+                    hourlyChart.data.datasets[0].data = data.ok;
+                    hourlyChart.data.datasets[1].data = data.nok;
+                    hourlyChart.update();
+                } catch (err) {
+                    console.error("Gagal memuat data hourly chart:", err);
+                }
+            }
+
+            loadHourlyData();
+            setInterval(loadHourlyData, 10000);
+        });
+    </script>
+</body>
+</html>

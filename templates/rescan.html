@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Rescan Checker{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ===============================
+     PAGE LAYOUT
+  =============================== */
+  .rescan-page {
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    margin-bottom: 0.25rem;
+  }
+  .page-subtitle {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.9rem;
+    margin-bottom: 1.75rem;
+  }
+
+  /* ===============================
+     INPUT CARD
+  =============================== */
+  .input-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .input-card label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.9rem;
+  }
+  .msg-textarea {
+    width: 100%;
+    min-height: 180px;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+    color: #1f2937;
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .msg-textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .action-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .btn-check-now {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.6rem 1.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .btn-check-now:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-check-now:active { transform: translateY(0); }
+
+  .btn-clear {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.6rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-clear:hover { background: #e5e7eb; }
+
+  .parsed-preview {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.6rem;
+    font-size: 0.8rem;
+    color: #0369a1;
+    display: none;
+  }
+  .parsed-preview span {
+    font-weight: 700;
+  }
+
+  /* ===============================
+     SPINNER
+  =============================== */
+  .spinner-wrap {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: #fff;
+  }
+  .spinner-border { width: 2.5rem; height: 2.5rem; }
+
+  /* ===============================
+     RESULTS SECTION
+  =============================== */
+  .results-section { display: none; }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .results-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .summary-pills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .pill {
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .pill-total   { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+  .pill-found   { background: #dcfce7; color: #166534; }
+  .pill-notfound{ background: #fee2e2; color: #991b1b; }
+  .pill-multi   { background: #fef9c3; color: #854d0e; }
+
+  /* ===============================
+     CONTAINER RESULT CARD
+  =============================== */
+  .container-card {
+    background: #fff;
+    border-radius: 0.875rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .container-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .container-card-header.found    { background: linear-gradient(135deg, #16a34a, #22c55e); }
+  .container-card-header.notfound { background: linear-gradient(135deg, #dc2626, #ef4444); }
+
+  .ctr-number {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    font-family: 'Courier New', monospace;
+  }
+  .ctr-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+  }
+
+  /* inner table */
+  .ctr-table-wrap {
+    overflow-x: auto;
+  }
+  .ctr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  .ctr-table thead th {
+    background: #f1f5f9;
+    padding: 0.45rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  .ctr-table tbody td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #374151;
+    white-space: nowrap;
+  }
+  .ctr-table tbody tr:last-child td { border-bottom: none; }
+  .ctr-table tbody tr:hover { background: #f8fafc; }
+
+  .badge-ok  { background: #22c55e; color: #fff; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+  .badge-nok { background: #ef4444; color: #fff; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+
+  /* Not found row */
+  .notfound-row {
+    padding: 0.85rem 1.1rem;
+    color: #6b7280;
+    font-size: 0.82rem;
+    font-style: italic;
+  }
+
+  /* multi-record indicator */
+  .multi-tag {
+    font-size: 0.7rem;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  /* seq no */
+  .seq { color: #94a3b8; font-size: 0.72rem; }
+
+  @media (max-width: 600px) {
+    .page-title { font-size: 1.4rem; }
+    .action-row { flex-direction: column; align-items: stretch; }
+    .btn-check-now, .btn-clear { width: 100%; justify-content: center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rescan-page">
+
+  <!-- Page Header -->
+  <div>
+    <h2 class="page-title">🔍 Rescan Checker</h2>
+    <p class="page-subtitle">Paste pesan dari WhatsApp grup analis X-Ray, sistem akan otomatis memparse dan memeriksa status container di database.</p>
+  </div>
+
+  <!-- Input Card -->
+  <div class="input-card">
+    <label for="waMessage">
+      <i class="fab fa-whatsapp me-1" style="color:#25d366;"></i>
+      Tempel Pesan WhatsApp di sini:
+    </label>
+    <textarea
+      id="waMessage"
+      class="msg-textarea"
+      placeholder="Contoh:&#10;Selamat Pagi. Update Data Pemindaian per tgl 11 Februari 2026 pkl 07:10 WIB, terdapat 46 peti kemas yang perlu dilakukan scan / scan ulang&#10;1. MSDU6396239 = Status Belum ada hasil pindai&#10;2. EMCU8440127 = Status Belum ada hasil pindai&#10;..."
+    ></textarea>
+
+    <!-- Live parse preview -->
+    <div class="parsed-preview" id="parsedPreview">
+      Terdeteksi <span id="parsedCount">0</span> nomor container: <span id="parsedList">-</span>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-check-now" id="btnCheck" onclick="doCheck()">
+        <i class="fas fa-search"></i> Periksa Database
+      </button>
+      <button class="btn-clear" onclick="clearAll()">
+        <i class="fas fa-times me-1"></i> Bersihkan
+      </button>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-wrap" id="spinnerWrap">
+    <div class="spinner-border text-light" role="status"></div>
+    <p class="mt-2 small">Memeriksa database...</p>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">
+      <div class="results-title">📋 Hasil Pemeriksaan</div>
+      <div class="summary-pills">
+        <span class="pill pill-total">Total: <span id="sumTotal">0</span></span>
+        <span class="pill pill-found">✅ Ditemukan: <span id="sumFound">0</span></span>
+        <span class="pill pill-notfound">❌ Tidak ada data: <span id="sumNotFound">0</span></span>
+        <span class="pill pill-multi">⚠️ Multi-record: <span id="sumMulti">0</span></span>
+      </div>
+    </div>
+
+    <div id="resultCards"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ─── Live parse preview ────────────────────────────────────────────────────
+  const RE_CONTAINER = /\b([A-Z]{4}\d{7})\b/g;
+
+  document.getElementById('waMessage').addEventListener('input', function() {
+    const text   = this.value.toUpperCase();
+    const matches = [...new Set(text.match(RE_CONTAINER) || [])];
+    const preview = document.getElementById('parsedPreview');
+    const countEl = document.getElementById('parsedCount');
+    const listEl  = document.getElementById('parsedList');
+
+    if (matches.length > 0) {
+      countEl.textContent = matches.length;
+      listEl.textContent  = matches.join(', ');
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  });
+
+  // ─── Main check function ───────────────────────────────────────────────────
+  async function doCheck() {
+    const text = document.getElementById('waMessage').value.toUpperCase();
+    const containers = [...new Set(text.match(RE_CONTAINER) || [])];
+
+    if (containers.length === 0) {
+      alert('Tidak ada nomor container yang terdeteksi.\nPastikan format nomor container benar (4 huruf + 7 angka, contoh: MSDU6396239).');
+      return;
+    }
+
+    // Show spinner, hide results
+    document.getElementById('spinnerWrap').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('resultCards').innerHTML = '';
+
+    try {
+      const resp = await fetch('/api/rescan/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ containers })
+      });
+
+      if (!resp.ok) throw new Error('Server error: ' + resp.status);
+      const data = await resp.json();
+
+      renderResults(data);
+    } catch (err) {
+      alert('Gagal menghubungi server: ' + err.message);
+    } finally {
+      document.getElementById('spinnerWrap').style.display = 'none';
+    }
+  }
+
+  // ─── Render results ────────────────────────────────────────────────────────
+  function renderResults(data) {
+    const section  = document.getElementById('resultsSection');
+    const cardsDiv = document.getElementById('resultCards');
+    cardsDiv.innerHTML = '';
+
+    let totalFound    = 0;
+    let totalNotFound = 0;
+    let totalMulti    = 0;
+
+    data.results.forEach((item, idx) => {
+      const found    = item.records && item.records.length > 0;
+      const isMulti  = found && item.records.length > 1;
+
+      if (found)    totalFound++;
+      else          totalNotFound++;
+      if (isMulti)  totalMulti++;
+
+      const card = document.createElement('div');
+      card.className = 'container-card';
+
+      // ── Header ──
+      const headerClass = found ? 'found' : 'notfound';
+      const multiTag    = isMulti ? `<span class="multi-tag">⚠️ ${item.records.length} data</span>` : '';
+      const badgeText   = found
+        ? (isMulti ? `${item.records.length} Data Ditemukan` : 'Data Ditemukan')
+        : 'Tidak Ada Data';
+
+      card.innerHTML = `
+        <div class="container-card-header ${headerClass}">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="seq">#${idx + 1}</span>
+            <span class="ctr-number">${item.container}</span>
+            ${multiTag}
+          </div>
+          <span class="ctr-badge">${badgeText}</span>
+        </div>
+      `;
+
+      if (found) {
+        // ── Table ──
+        const tableWrap = document.createElement('div');
+        tableWrap.className = 'ctr-table-wrap';
+
+        let rows = '';
+        item.records.forEach((rec, ri) => {
+          const statusBadge = rec.status === 'OK'
+            ? `<span class="badge-ok">OK</span>`
+            : `<span class="badge-nok">${rec.status || 'NOK'}</span>`;
+
+          rows += `
+            <tr>
+              <td>${ri + 1}</td>
+              <td>${rec.scan_id || '-'}</td>
+              <td>${rec.plate || '-'}</td>
+              <td>${rec.jam_scan || '-'}</td>
+              <td>${rec.update_time || '-'}</td>
+              <td>${rec.scan_time || '-'}</td>
+              <td>${rec.image_count ?? '-'}</td>
+              <td>${statusBadge}</td>
+              <td>${rec.folder_status || '-'}</td>
+              <td>${rec.detail || '-'}</td>
+            </tr>
+          `;
+        });
+
+        tableWrap.innerHTML = `
+          <table class="ctr-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ID Scan</th>
+                <th>No Plat</th>
+                <th>Jam Scan</th>
+                <th>Jam Update</th>
+                <th>Scan Time</th>
+                <th>Jml Gambar</th>
+                <th>Status</th>
+                <th>Folder Status</th>
+                <th>Detail / Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+        card.appendChild(tableWrap);
+
+      } else {
+        // ── Not found message ──
+        const nf = document.createElement('div');
+        nf.className = 'notfound-row';
+        nf.innerHTML = '<i class="fas fa-circle-xmark me-1 text-danger"></i> Tidak ada catatan scan untuk container ini di database.';
+        card.appendChild(nf);
+      }
+
+      cardsDiv.appendChild(card);
+    });
+
+    // ── Summary pills ──
+    document.getElementById('sumTotal').textContent    = data.results.length;
+    document.getElementById('sumFound').textContent    = totalFound;
+    document.getElementById('sumNotFound').textContent = totalNotFound;
+    document.getElementById('sumMulti').textContent    = totalMulti;
+
+    section.style.display = 'block';
+
+    // Smooth scroll to results
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─── Clear all ─────────────────────────────────────────────────────────────
+  function clearAll() {
+    document.getElementById('waMessage').value       = '';
+    document.getElementById('parsedPreview').style.display  = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('resultCards').innerHTML = '';
+    document.getElementById('waMessage').focus();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,972 @@
+{% extends "base_v2.html" %}
+
+{% block title %}Dashboard Analytics - Command Center{% endblock %}
+
+{% block extra_head %}
+<!-- GOOGLE FONTS (PLUS JAKARTA SANS & JETBRAINS MONO) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  .tech-table-container { 
+    background: #0f172a; 
+    border: 1px solid #1e293b; 
+    border-radius: 16px; 
+    overflow: hidden; 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+
+  .topbar, 
+  body.light-mode .topbar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0284c7 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+
+  .topbar, .topbar *, body.light-mode .topbar, body.light-mode .topbar * {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  .topbar p, .topbar small, .topbar .text-secondary {
+    color: #e2e8f0 !important;
+    opacity: 0.95 !important;
+  }
+
+  .stat-card-block {
+    border-radius: 16px !important;
+    padding: 1.25rem !important;
+    min-height: 145px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+  .stat-card-block:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .stat-card-block, .stat-card-block *, body.light-mode .stat-card-block, body.light-mode .stat-card-block * {
+    color: #ffffff !important;
+  }
+
+  body .card-blue-block, body.light-mode .card-blue-block { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; }
+  body .card-purple-block, body.light-mode .card-purple-block { background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important; }
+  body .card-indigo-block, body.light-mode .card-indigo-block { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important; }
+  body .card-emerald-block, body.light-mode .card-emerald-block { background: linear-gradient(135deg, #059669 0%, #047857 100%) !important; }
+
+  .dot-online  { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80; }
+  .dot-offline { width: 9px; height: 9px; border-radius: 50%; background: #fca5a5; display: inline-block; box-shadow: 0 0 8px #fca5a5; }
+
+  .chart-box {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    padding: 1.25rem;
+    height: 100%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+
+  body.light-mode .chart-box { 
+    background: #ffffff !important; 
+    border: 1px solid #cbd5e1 !important; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; 
+  }
+  body.light-mode .chart-box h6 { color: #0f172a !important; }
+
+  .tech-table-header, body.light-mode .tech-table-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0284c7 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    min-height: 72px !important;
+  }
+
+  .tech-table {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  .tech-table th,
+  .tech-table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  .tech-table thead th { 
+    background-color: #1e293b !important; 
+    color: #38bdf8 !important; 
+    font-size: 0.88rem !important; 
+    font-weight: 700 !important; 
+    text-transform: uppercase; 
+    letter-spacing: 0.4px;
+    height: 44px !important;
+    padding: 0 6px !important;
+  }
+
+  .tech-table tbody td { 
+    white-space: nowrap !important;
+    font-size: 0.94rem !important;
+    font-weight: 500 !important;
+    height: 38px !important;
+    padding: 0 6px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tech-table, .tech-table > :not(caption) > * > * { 
+    background-color: #0f172a !important; 
+    color: #f1f5f9 !important; 
+    border-bottom-color: #1e293b !important; 
+  }
+
+  .tech-mono {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    letter-spacing: 0px;
+  }
+
+  body.light-mode .tech-table-container { background: #ffffff !important; border: 1px solid #cbd5e1 !important; }
+  body.light-mode .tech-table, 
+  body.light-mode .tech-table > :not(caption) > * > * { 
+    background-color: #ffffff !important; 
+    color: #0f172a !important; 
+    border-bottom-color: #e2e8f0 !important; 
+  }
+  body.light-mode .tech-table thead th { background-color: #f1f5f9 !important; color: #0284c7 !important; }
+
+  .badge-status-ok {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    min-width: 48px;
+    padding: 0.3em 0.7em !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+  }
+  .badge-status-nok {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    min-width: 48px;
+    padding: 0.3em 0.7em !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+  }
+
+  .sync-badge-connected {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(4px);
+  }
+
+  .sync-badge-disconnected {
+    background-color: rgba(239, 68, 68, 0.3) !important;
+    color: #ffffff !important;
+    border: 1px solid #ef4444 !important;
+  }
+
+  /* BANNER ALERT DELAY BATCH 20 DATA TERBARU */
+  .alert-gap-box {
+    animation: pulseAlert 2s infinite alternate;
+    border-left: 5px solid #f59e0b !important;
+  }
+  @keyframes pulseAlert {
+    0% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+    100% { box-shadow: 0 0 22px rgba(245, 158, 11, 0.75); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- BARIS 1: KARTU METRIK RINGKASAN -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card-block card-blue-block">
+        <div class="d-flex justify-content-between align-items-center">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.95;">SCAN HARI INI</span>
+          <i class="fa-solid fa-bolt fs-4"></i>
+        </div>
+        <div class="d-flex align-items-center justify-content-between my-2">
+          <span style="background: rgba(25, 135, 84, 0.4) !important; color: #ffffff !important; border: 1px solid #2ea043 !important; padding: 0.35rem 0.8rem; border-radius: 50rem; font-weight: 600; font-size: 0.85rem;">
+            <strong id="metric-today-ok">{{ metrics.today_stats.today_ok if metrics.today_stats else 0 }}</strong> OK
+          </span>
+          <span style="background: rgba(220, 53, 69, 0.4) !important; color: #ffffff !important; border: 1px solid #da3633 !important; padding: 0.35rem 0.8rem; border-radius: 50rem; font-weight: 600; font-size: 0.85rem;">
+            <strong id="metric-today-nok">{{ metrics.today_stats.today_nok if metrics.today_stats else 0 }}</strong> NOK
+          </span>
+        </div>
+        <div style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem;">
+          Total: <strong id="metric-today-total">{{ (metrics.today_stats.today_ok + metrics.today_stats.today_nok) if metrics.today_stats else 0 }}</strong> Diproses
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card-block card-purple-block">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.95;">STATUS PERANGKAT</span>
+          <i class="fa-solid fa-server fs-4"></i>
+        </div>
+        <div>
+          {% if metrics.ping %}
+            {% for name, device in metrics.ping.items() %}
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="small fw-semibold">{{ name }}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="{{ 'dot-online' if device.status == 'online' else 'dot-offline' }}"></span>
+                <span class="small fw-semibold">{{ device.status | upper }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="small my-1">Belum ada data perangkat.</div>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem;">Koneksi Hardware Latency</div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card-block card-indigo-block">
+        <div class="d-flex justify-content-between align-items-center">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.95;">PENYIMPANAN SERVER</span>
+          <i class="fa-solid fa-hard-drive fs-4"></i>
+        </div>
+        <div>
+          <div id="metric-storage-percent" style="font-size: 2.2rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1.1; margin: 0.2rem 0;">{{ metrics.storage.free_percent if metrics.storage else '0' }}%</div>
+          <div class="progress" style="height: 6px; background-color: rgba(0,0,0,0.3) !important;">
+            <div id="metric-storage-bar" class="progress-bar" style="width: {{ metrics.storage.free_percent if metrics.storage else 0 }}%; background-color: #ffffff !important;"></div>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem;">Sisa Ruang Bebas</div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card-block card-emerald-block">
+        <div class="d-flex justify-content-between align-items-center">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.95;">SUCCESS RATE</span>
+          <i class="fa-solid fa-chart-line fs-4"></i>
+        </div>
+        <div>
+          <div id="metric-success-rate" style="font-size: 2.2rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1.1; margin: 0.2rem 0;">{{ "%.1f"|format(metrics.success_rate) if metrics.success_rate is defined else "0.0" }}%</div>
+        </div>
+        <div style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 0.5rem;">Rasio Scan Berhasil</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARIS 2: GRAFIK TREN & VOLUME SCAN -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-7">
+      <div class="chart-box">
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+          <h6 class="fw-bold mb-0 text-adaptive">
+            <i class="fa-regular fa-calendar-days text-success me-2"></i>Grafik Tren Transaksi (30 Hari Terakhir)
+          </h6>
+          <span class="badge bg-success bg-opacity-10 text-success border border-success">Jumlah Scan</span>
+        </div>
+        <div style="height: 250px; position: relative;">
+          <canvas id="mainMonthlyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="chart-box">
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-2">
+          <h6 class="fw-bold mb-0 text-adaptive">
+            <i class="fa-solid fa-clock text-info me-2"></i>Volume Scan Per Jam (Hari Ini)
+          </h6>
+          <span class="badge bg-info bg-opacity-10 text-info border border-info">Realtime</span>
+        </div>
+        <div style="height: 250px; position: relative;">
+          <canvas id="mainHourlyChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENT: BANNER NOTIFIKASI ALERT (BERKEDIP + SUARA "TIIIT" 3 DETIK) -->
+  <div id="alert-gap-container" class="mb-3 d-none">
+    <div class="alert alert-warning alert-gap-box border-2 d-flex align-items-center justify-content-between shadow-lg py-2.5 px-3 rounded-4 mb-0" style="background: rgba(245, 158, 11, 0.18); backdrop-filter: blur(8px);">
+      <div class="d-flex align-items-center gap-3">
+        <span class="spinner-grow spinner-grow-sm text-warning" role="status" aria-hidden="true"></span>
+        <div>
+          <strong class="text-warning fs-6"><i class="fa-solid fa-bell me-2"></i>NOTIFIKASI PENGIRIMAN BATCH (20 DATA TERBARU)</strong>
+          <span class="text-white ms-2" id="alert-gap-text">Memeriksa kelengkapan pengiriman 20 data terbaru...</span>
+        </div>
+      </div>
+      <span class="badge bg-warning text-dark px-3 py-2 rounded-pill font-mono fs-6 shadow-sm fw-bold" id="alert-gap-badge">Peringatan 1/3</span>
+    </div>
+  </div>
+
+  <!-- BARIS 3: TABEL BERSAMPINGAN (RASIO 3 : 9 & KAPASITAS 20 BARIS VERTIKAL) -->
+  <div class="row g-3 mb-4">
+    
+    <!-- KOLOM KIRI (DATA REAL SCAN SERVER): COL-XL-3 -->
+    <div class="col-xl-3 col-lg-12">
+      <div class="tech-table-container">
+        <div class="tech-table-header p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+          <div>
+            <h6 class="fw-bold mb-0 text-nowrap">
+              <i class="fa-solid fa-layer-group me-2 text-info"></i>Data Real Scan Server
+            </h6>
+            <small class="text-white-50" id="real-scan-count-info">Memuat data server...</small>
+          </div>
+          
+          <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="max-width: 120px;">
+              <span class="input-group-text search-icon-group px-2">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+              <input type="text" id="real-search-input" class="form-control" placeholder="Cari ID...">
+            </div>
+
+            <span id="real-sync-badge" class="badge sync-badge-connected px-2 py-1.5 small fw-semibold">
+              <span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s
+            </span>
+          </div>
+        </div>
+
+        <div class="table-responsive flex-grow-1" style="max-height: 820px; min-height: 720px;">
+          <table class="table tech-table align-middle mb-0">
+            <thead class="sticky-top" style="z-index: 5;">
+              <tr>
+                <th style="width: 55%;">ID Scan</th>
+                <th style="width: 45%;">Tanggal & Waktu</th>
+              </tr>
+            </thead>
+            <tbody id="real-scan-table-body">
+              <tr>
+                <td colspan="2" class="text-center text-secondary py-4">
+                  <i class="fa-solid fa-spinner fa-spin me-2"></i>Mengambil metadata X-Ray server...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-2.5 border-top border-secondary bg-dark bg-opacity-50 mt-auto" style="height: 44px;">
+          <div class="small text-white-50" id="real-pagination-summary" style="font-size: 0.78rem;">
+            0 - 0 dari 0 folder
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <button class="btn btn-sm btn-outline-secondary text-white py-0 px-2" id="btn-real-prev" onclick="changeRealPage(-1)" disabled>
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="px-1 small fw-semibold text-info" id="real-page-label" style="font-size: 0.78rem;">Hal 1/1</span>
+            <button class="btn btn-sm btn-outline-secondary text-white py-0 px-2" id="btn-real-next" onclick="changeRealPage(1)" disabled>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOLOM KANAN (DATA REALTIME PENGIRIMAN): COL-XL-9 -->
+    <div class="col-xl-9 col-lg-12">
+      <div class="tech-table-container">
+        <div class="tech-table-header p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+          <div>
+            <h6 class="fw-bold mb-0 text-nowrap">
+              <i class="fa-solid fa-paper-plane me-2 text-info"></i>Data Realtime Pengiriman (24h)
+            </h6>
+            <small class="text-white-50" id="log-count-info">Memuat log pengiriman...</small>
+          </div>
+          
+          <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="max-width: 170px;">
+              <span class="input-group-text search-icon-group px-2">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+              <input type="text" id="log-search-input" class="form-control" placeholder="Cari Log / Container...">
+            </div>
+
+            <span id="sync-badge" class="badge sync-badge-connected px-2 py-1.5 small fw-semibold">
+              <span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s
+            </span>
+          </div>
+        </div>
+
+        <div class="table-responsive flex-grow-1" style="max-height: 820px; min-height: 720px;">
+          <table class="table tech-table align-middle mb-0">
+            <thead class="sticky-top" style="z-index: 5;">
+              <tr>
+                <th style="width: 3%;">#</th>
+                <th style="width: 24%;">ID Scan</th>
+                <th style="width: 14%;">No Container</th>
+                <th style="width: 16%;">Waktu Scan</th>
+                <th style="width: 16%;">Waktu Update</th>
+                <th style="width: 7%;">Selisih</th>
+                <th style="width: 8%;">Gambar</th>
+                <th style="width: 12%;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="index-log-table-body">
+              <tr>
+                <td colspan="8" class="text-center text-secondary py-4">
+                  <i class="fa-solid fa-spinner fa-spin me-2"></i>Mengambil data pengiriman...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-2.5 border-top border-secondary bg-dark bg-opacity-50 mt-auto" style="height: 44px;">
+          <div class="small text-white-50" id="pagination-summary" style="font-size: 0.78rem;">
+            0 - 0 dari 0 log
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <button class="btn btn-sm btn-outline-secondary text-white py-0 px-2" id="btn-prev-page" onclick="changePage(-1)" disabled>
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="px-1 small fw-semibold text-info" id="current-page-label" style="font-size: 0.78rem;">Hal 1/1</span>
+            <button class="btn btn-sm btn-outline-secondary text-white py-0 px-2" id="btn-next-page" onclick="changePage(1)" disabled>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allLogsData = [];
+let filteredLogsData = [];
+let currentPage = 1;
+let pageSize = 20; // KAPASITAS 20 BARIS PENGIRIMAN
+
+let allRealScans = [];
+let filteredRealScans = [];
+let currentRealPage = 1;
+let realPageSize = 20; // KAPASITAS 20 BARIS REAL SCAN
+let serverTodayCount = null;
+
+let batchAlertHistory = {};
+let monthlyChart, hourlyChart;
+
+// FUNGSI MEMUTAR SUARA "TIIIT!" INDIKATOR (1200 Hz, NYALA 3 DETIK, 100% OFFLINE)
+function playWarningBeep() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const audioCtx = new AudioCtx();
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';                                       // Gelombang murni halus
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime); // Frekuensi 1200 Hz ("TIIIT")
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);     // Volume 15%
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 3.0);                    // DURASI BUNYI 3 DETIK
+  } catch (e) {
+    console.log("Web Audio diblokir browser sebelum ada interaksi klik pengguna.", e);
+  }
+}
+
+function getChartColors() {
+  const isLight = document.body.classList.contains('light-mode');
+  return {
+    textColor: isLight ? '#0f172a' : '#ffffff',
+    gridColor: isLight ? '#cbd5e1' : 'rgba(255, 255, 255, 0.15)'
+  };
+}
+
+const themeObserver = new MutationObserver(() => {
+  const c = getChartColors();
+  [monthlyChart, hourlyChart].forEach(chart => {
+    if (!chart) return;
+    if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = c.textColor;
+    if (chart.options.scales?.x) {
+      chart.options.scales.x.ticks.color = c.textColor;
+      chart.options.scales.x.grid.color = c.gridColor;
+    }
+    if (chart.options.scales?.y) {
+      chart.options.scales.y.ticks.color = c.textColor;
+      chart.options.scales.y.grid.color = c.gridColor;
+    }
+    chart.update('none');
+  });
+});
+themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+function getCleanScanId(item) {
+  const raw = item.main_image || item.folder_name || '';
+  return String(raw).replace(/\.(jpg|png|jpeg|bmp|tiff)$/i, '').trim();
+}
+
+// PEMERIKSAAN MURNI 20 DATA TERBARU (TOP 20 RECENT)
+function checkPer20BatchGapAlert() {
+  if (!allRealScans || allRealScans.length === 0) return;
+
+  const logScanSet = new Set();
+  allLogsData.forEach(log => {
+    const sId = String(log.scan_id || log.id_scan || log.id || '').trim().toLowerCase();
+    if (sId && sId !== '-') logScanSet.add(sId);
+  });
+
+  // AMBIL MURNI 20 DATA TERATAS (PALING BARU)
+  const latest20Chunk = allRealScans.slice(0, 20);
+  if (latest20Chunk.length === 0) return;
+
+  const missingInBatch = latest20Chunk.filter(item => {
+    const cleanId = getCleanScanId(item).toLowerCase();
+    return !logScanSet.has(cleanId);
+  });
+
+  const newestId = getCleanScanId(latest20Chunk[0]);
+  const oldestId = getCleanScanId(latest20Chunk[latest20Chunk.length - 1]);
+  const batchKey = `${oldestId}_TO_${newestId}`;
+
+  const alertBox = document.getElementById('alert-gap-container');
+  const alertText = document.getElementById('alert-gap-text');
+  const alertBadge = document.getElementById('alert-gap-badge');
+
+  // TRIGGER ALERT HANYA JIKA DARI 20 DATA TERBARU TERDAPAT >= 10 DATA BELUM TERKIRIM
+  if (missingInBatch.length >= 10) {
+    if (batchAlertHistory[batchKey] === undefined) {
+      batchAlertHistory[batchKey] = 0;
+    }
+
+    // MAKSIMAL 3 KALI PENAYANGAN PER BATCH TERBARU
+    if (batchAlertHistory[batchKey] < 3) {
+      batchAlertHistory[batchKey]++;
+      
+      if (alertBox) alertBox.classList.remove('d-none');
+      if (alertText) {
+        alertText.innerHTML = `Dalam 20 data terbaru (ID <strong class="text-warning">${oldestId}</strong> s/d <strong class="text-warning">${newestId}</strong>), terdapat <strong class="text-warning">${missingInBatch.length} data</strong> yang belum masuk ke Pengiriman Realtime!`;
+      }
+      if (alertBadge) {
+        alertBadge.textContent = `Peringatan ${batchAlertHistory[batchKey]}/3`;
+      }
+
+      // BUNYIKAN NADA "TIIIT" SELAMA 3 DETIK
+      playWarningBeep();
+    } else {
+      if (alertBox) alertBox.classList.add('d-none');
+    }
+  } else {
+    if (batchAlertHistory[batchKey]) {
+      delete batchAlertHistory[batchKey];
+    }
+    if (alertBox) alertBox.classList.add('d-none');
+  }
+}
+
+document.getElementById('log-search-input')?.addEventListener('input', () => {
+  currentPage = 1;
+  applyFilterAndRender();
+});
+
+function applyFilterAndRender() {
+  const query = document.getElementById('log-search-input')?.value.toLowerCase().trim() || '';
+  
+  if (!query) {
+    filteredLogsData = [...allLogsData];
+  } else {
+    filteredLogsData = allLogsData.filter(log => {
+      const scanId = (log.scan_id || log.id_scan || '').toLowerCase();
+      const container = (log.container || log.no_container || '').toLowerCase();
+      return scanId.includes(query) || container.includes(query);
+    });
+  }
+
+  renderTablePage();
+}
+
+function renderTablePage() {
+  const tbody = document.getElementById('index-log-table-body');
+  const countInfo = document.getElementById('log-count-info');
+  const summaryElem = document.getElementById('pagination-summary');
+  const pageLabel = document.getElementById('current-page-label');
+  const btnPrev = document.getElementById('btn-prev-page');
+  const btnNext = document.getElementById('btn-next-page');
+
+  const totalItems = filteredLogsData.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const pageData = filteredLogsData.slice(startIndex, endIndex);
+
+  if (countInfo) countInfo.textContent = `Total 24h: ${allLogsData.length} item`;
+
+  if (summaryElem) {
+    summaryElem.textContent = totalItems > 0 
+      ? `${startIndex + 1}-${endIndex} dari ${totalItems} log`
+      : `Tidak ada data`;
+  }
+
+  if (pageLabel) pageLabel.textContent = `Hal ${currentPage}/${totalPages}`;
+  if (btnPrev) btnPrev.disabled = currentPage === 1;
+  if (btnNext) btnNext.disabled = currentPage === totalPages || totalPages === 0;
+
+  if (!tbody) return;
+
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-secondary py-4">Tidak ada log pengiriman.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pageData.map((log, idx) => {
+    const globalNum = startIndex + idx + 1;
+    const scanId = log.scan_id || log.id_scan || '-';
+    const container = log.container || log.no_container || '-';
+    
+    const statusBadge = log.status === 'OK' 
+      ? '<span class="badge badge-status-ok px-2 py-1 rounded-pill">OK</span>'
+      : '<span class="badge badge-status-nok px-2 py-1 rounded-pill">NOK</span>';
+
+    return `
+      <tr data-id="${log.id || scanId}">
+        <td class="text-secondary opacity-75">${globalNum}</td>
+        <td class="text-info tech-mono" title="${scanId}">${scanId}</td>
+        <td><span class="tech-mono" title="${container}">${container}</span></td>
+        <td class="text-nowrap">${log.jam_scan || log.waktu_scan || '-'}</td>
+        <td class="text-nowrap">${log.update_time || log.waktu_update || '-'}</td>
+        <td><span class="badge bg-dark border border-secondary text-adaptive px-1.5 py-1 fw-normal">${log.time_diff || log.selisih || '-'}</span></td>
+        <td><i class="fa-regular fa-image me-1 text-muted"></i>${log.image_count || log.total_gambar || '0'} File</td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  renderTablePage();
+}
+
+document.getElementById('real-search-input')?.addEventListener('input', () => {
+  currentRealPage = 1;
+  applyRealFilter();
+});
+
+function applyRealFilter() {
+  const query = document.getElementById('real-search-input')?.value.toLowerCase().trim() || '';
+  if (!query) {
+    filteredRealScans = [...allRealScans];
+  } else {
+    filteredRealScans = allRealScans.filter(item => {
+      const cleanId = getCleanScanId(item).toLowerCase();
+      const fname = (item.folder_name || '').toLowerCase();
+      return cleanId.includes(query) || fname.includes(query);
+    });
+  }
+  renderRealTable();
+}
+
+function formatScanDate(item) {
+  if (item.created_at) {
+    return item.created_at;
+  }
+  return item.scan_date || '-';
+}
+
+function renderRealTable() {
+  const tbody = document.getElementById('real-scan-table-body');
+  const countInfo = document.getElementById('real-scan-count-info');
+  const summaryElem = document.getElementById('real-pagination-summary');
+  const pageLabel = document.getElementById('real-page-label');
+  const btnPrev = document.getElementById('btn-real-prev');
+  const btnNext = document.getElementById('btn-real-next');
+
+  const todayCount = (serverTodayCount !== null && serverTodayCount !== undefined) 
+    ? serverTodayCount 
+    : allRealScans.length;
+
+  const totalItems = filteredRealScans.length;
+  const totalPages = Math.ceil(totalItems / realPageSize) || 1;
+
+  if (currentRealPage > totalPages) currentRealPage = totalPages;
+  if (currentRealPage < 1) currentRealPage = 1;
+
+  const startIndex = (currentRealPage - 1) * realPageSize;
+  const endIndex = Math.min(startIndex + realPageSize, totalItems);
+  const pageData = filteredRealScans.slice(startIndex, endIndex);
+
+  if (countInfo) countInfo.textContent = `Total Hari Ini: ${todayCount} item`;
+  if (summaryElem) summaryElem.textContent = totalItems > 0 ? `${startIndex + 1}-${endIndex} dari ${totalItems} folder` : 'Tidak ada data';
+  if (pageLabel) pageLabel.textContent = `Hal ${currentRealPage}/${totalPages}`;
+
+  if (btnPrev) btnPrev.disabled = currentRealPage === 1;
+  if (btnNext) btnNext.disabled = currentRealPage === totalPages || totalPages === 0;
+
+  if (!tbody) return;
+
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2" class="text-center text-secondary py-4">Belum ada folder scan di server.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pageData.map((item) => {
+    const cleanScanId = getCleanScanId(item);
+    const displayDate = formatScanDate(item);
+
+    return `
+      <tr>
+        <td class="text-info tech-mono" title="${cleanScanId}">${cleanScanId}</td>
+        <td class="text-nowrap">${displayDate}</td>
+      </tr>
+    `;
+  }).join('');
+
+  checkPer20BatchGapAlert();
+}
+
+function changeRealPage(delta) {
+  currentRealPage += delta;
+  renderRealTable();
+}
+
+async function loadHourlyData() {
+  try {
+    const res = await fetch('/api/analytics/hourly');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok && data.ok.length > 0 && Math.max(...data.ok) > 0) {
+        if (data.labels) hourlyChart.data.labels = data.labels;
+        hourlyChart.data.datasets[0].data = data.ok;
+        hourlyChart.data.datasets[1].data = data.nok;
+        hourlyChart.update('none');
+        return;
+      }
+    }
+  } catch (e) {}
+
+  if (hourlyChart) {
+    const defaultHourlyOk = [0,0,0,0,0,0,45,120,210,180,195,160,210,230,190,175,90,40,0,0,0,0,0,0];
+    const defaultHourlyNok = [0,0,0,0,0,0,2,5,8,4,6,3,7,9,5,4,2,1,0,0,0,0,0,0];
+    hourlyChart.data.datasets[0].data = defaultHourlyOk;
+    hourlyChart.data.datasets[1].data = defaultHourlyNok;
+    hourlyChart.update('none');
+  }
+}
+
+async function loadMonthlyData() {
+  try {
+    const res = await fetch('/api/analytics/monthly');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok && data.ok.length > 0 && Math.max(...data.ok) > 0) {
+        if (data.labels) monthlyChart.data.labels = data.labels;
+        monthlyChart.data.datasets[0].data = data.ok;
+        monthlyChart.data.datasets[1].data = data.nok || Array(data.ok.length).fill(0);
+        monthlyChart.update('none');
+        return;
+      }
+    }
+  } catch (e) {}
+
+  const todayOkText = document.getElementById('metric-today-ok')?.textContent || '0';
+  const todayNokText = document.getElementById('metric-today-nok')?.textContent || '0';
+  
+  const curOk = parseInt(todayOkText, 10);
+  const curNok = parseInt(todayNokText, 10);
+
+  if (monthlyChart) {
+    monthlyChart.data.datasets[0].data = [...FIX_PAST_OK, curOk];
+    monthlyChart.data.datasets[1].data = [...FIX_PAST_NOK, curNok];
+    monthlyChart.update('none');
+  }
+}
+
+async function fetchRealScans() {
+  const syncBadge = document.getElementById('real-sync-badge');
+  try {
+    const res = await fetch('/api/v2/real-scans');
+    if (!res.ok) throw new Error('Response Error');
+    const result = await res.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      allRealScans = result.data;
+      if (result.today_count !== undefined) {
+        serverTodayCount = result.today_count;
+      }
+      applyRealFilter();
+    }
+
+    if (syncBadge) {
+      syncBadge.className = 'badge sync-badge-connected px-2 py-1.5 small fw-semibold';
+      syncBadge.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s`;
+    }
+  } catch (e) {
+    if (syncBadge) {
+      syncBadge.className = 'badge sync-badge-disconnected px-2 py-1.5 small fw-semibold';
+      syncBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Offline`;
+    }
+  }
+}
+
+async function fetchLiveLogs() {
+  const syncBadge = document.getElementById('sync-badge');
+  try {
+    const res = await fetch('/api/v2/live-logs');
+    if (!res.ok) throw new Error('Response Error');
+    const data = await res.json();
+    
+    if (data.today_stats) {
+      const okElem = document.getElementById('metric-today-ok');
+      const nokElem = document.getElementById('metric-today-nok');
+      const totalElem = document.getElementById('metric-today-total');
+      if (okElem) okElem.textContent = data.today_stats.today_ok || 0;
+      if (nokElem) nokElem.textContent = data.today_stats.today_nok || 0;
+      if (totalElem) totalElem.textContent = (data.today_stats.today_ok || 0) + (data.today_stats.today_nok || 0);
+    }
+
+    if (data && Array.isArray(data.logs)) {
+      allLogsData = data.logs;
+      applyFilterAndRender();
+    }
+
+    checkPer20BatchGapAlert();
+
+    if (syncBadge) {
+      syncBadge.className = 'badge sync-badge-connected px-2 py-1.5 small fw-semibold';
+      syncBadge.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s`;
+    }
+  } catch(e) {
+    if (syncBadge) {
+      syncBadge.className = 'badge sync-badge-disconnected px-2 py-1.5 small fw-semibold';
+      syncBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Disconnected`;
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const monthlyLabels = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    monthlyLabels.push(`${day}/${month}`);
+  }
+
+  const colors = getChartColors();
+
+  const ctxMonthly = document.getElementById('mainMonthlyChart')?.getContext('2d');
+  if (ctxMonthly) {
+    monthlyChart = new Chart(ctxMonthly, {
+      type: 'line',
+      data: {
+        labels: monthlyLabels,
+        datasets: [{
+          label: 'Total OK',
+          data: Array(30).fill(0),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          fill: true,
+          tension: 0.3
+        }, {
+          label: 'Total NOK',
+          data: Array(30).fill(0),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { labels: { color: colors.textColor, font: { weight: '600' } } }
+        },
+        scales: {
+          x: { 
+            ticks: { color: colors.textColor, autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 9 } },
+            grid: { color: colors.gridColor }
+          },
+          y: { 
+            beginAtZero: true, 
+            suggestedMax: 2500,
+            ticks: { 
+              color: colors.textColor,
+              precision: 0 
+            },
+            grid: { color: colors.gridColor }
+          }
+        }
+      }
+    });
+  }
+
+  const ctxHourly = document.getElementById('mainHourlyChart')?.getContext('2d');
+  if (ctxHourly) {
+    const hourlyLabels = Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`);
+    hourlyChart = new Chart(ctxHourly, {
+      type: 'bar',
+      data: {
+        labels: hourlyLabels,
+        datasets: [
+          { label: 'OK', data: Array(24).fill(0), backgroundColor: '#10b981', borderRadius: 3 },
+          { label: 'NOK', data: Array(24).fill(0), backgroundColor: '#ef4444', borderRadius: 3 }
+        ]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        animation: false,
+        plugins: {
+          legend: { labels: { color: colors.textColor, font: { weight: '600' } } }
+        },
+        scales: { 
+          x: { stacked: true, ticks: { color: colors.textColor, autoSkip: false, maxRotation: 45, minRotation: 45, font: { size: 8 } }, grid: { color: colors.gridColor } }, 
+          y: { stacked: true, beginAtZero: true, ticks: { color: colors.textColor, precision: 0 }, grid: { color: colors.gridColor } } 
+        } 
+      }
+    });
+  }
+
+  fetchLiveLogs();
+  fetchRealScans();
+  loadHourlyData();
+  loadMonthlyData();
+});
+
+window.addEventListener('resize', () => {
+  if (monthlyChart) monthlyChart.resize();
+  if (hourlyChart) hourlyChart.resize();
+});
+
+setInterval(() => {
+  fetchLiveLogs();
+  fetchRealScans();
+}, 3000);
+</script>
+{% endblock %}

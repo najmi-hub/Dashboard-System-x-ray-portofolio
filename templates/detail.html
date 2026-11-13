@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .table-wrapper {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(90deg, #ffffff, #d9e0e4);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+    margin-top: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  
+  }
+
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-form input,
+  .filter-form select,
+  .filter-form button {
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .filter-form button {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .filter-form button:hover { opacity: 0.9; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+    font-size: 1rem; /* font lebih kecil */
+  }
+
+  thead th {
+    padding: 0.35rem 0.5rem; /* lebih rapat */
+    text-align: left;
+    color: white;
+  }
+
+  /* 🎨 Warna berbeda untuk OK & NOK */
+  .thead-ok {
+    background: linear-gradient(90deg, #1edf62, #28a745);
+  }
+
+  .thead-nok {
+    background: linear-gradient(90deg, #fa0404c9, #dc3545);
+  }
+
+  tbody td {
+    padding: 0.25rem 0.4rem; /* padding diperkecil agar kolom lebih rapat */
+    font-size: 1rem; /* font sel sedikit lebih kecil */
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  tbody tr:nth-child(even) { background: #f9fafb; }
+  tbody tr:hover { background: #f1f5f9; transition: 0.12s; }
+
+  @media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .filter-form { flex-direction: column; width: 100%; }
+    .filter-form input, .filter-form select, .filter-form button { width: 100%; }
+  }
+
+  /* Sesuaikan lebar kolom spesifik, dibuat lebih kecil dari sebelumnya */
+  .table-wrapper table thead th:nth-child(5),
+  .table-wrapper table tbody td:nth-child(5) {
+    min-width: 120px;
+    width: 120px;
+    white-space: nowrap;
+  }
+
+  .table-wrapper table thead th:nth-child(6),
+  .table-wrapper table tbody td:nth-child(6) {
+    min-width: 120px;
+    width: 120px;
+    white-space: nowrap;
+  }
+
+  .table-wrapper table thead th:nth-child(7),
+  .table-wrapper table tbody td:nth-child(7) {
+    min-width: 100px;
+    width: 110px;
+    white-space: nowrap;
+  }
+
+  /* kecilkan jarak vertikal baris */
+  .table-wrapper tbody td {
+    line-height: 1.1;
+  }
+</style>
+
+<div class="page-header">
+  <h3 class="page-title">{{ title }}</h3>
+  <div class="alert text-center fw-bold" style="margin-top: 10px; background: linear-gradient(90deg, #28a745, #dc3545); color: white; border-radius: 8px;">
+  {% if status.lower() == "ok" %}
+    ✅ Total OK: {{ metrics.ok }} | 📅 Hari Ini: {{ metrics.today_stats.today_ok }}
+  {% elif status.lower() == "nok" %}
+    ❌ Total NOK: {{ metrics.nok }} | 📅 Hari Ini: {{ metrics.today_stats.today_nok }}
+  {% endif %}
+  </div>
+
+  <form method="get" class="filter-form">
+    <input type="text" name="search" value="{{ search }}" placeholder="Cari...">
+    {% if status.lower() == "ok" %}
+      <select name="filter" onchange="this.form.submit()">
+        <option value="newest" {% if filter_option == "newest" %}selected{% endif %}>Terbaru</option>
+        <option value="oldest" {% if filter_option == "oldest" %}selected{% endif %}>Terlama</option>
+      </select>
+    {% else %}
+      <select name="filter" onchange="this.form.submit()">
+        <option value="newest" {% if filter_option == "newest" %}selected{% endif %}>Terbaru</option>
+        <option value="oldest" {% if filter_option == "oldest" %}selected{% endif %}>Terlama</option>
+        <option value="reason" {% if filter_option == "reason" %}selected{% endif %}>Detail Alasan</option>
+      </select>
+    {% endif %}
+    <button type="submit">Cari</button>
+</form>
+</div>
+
+<div class="table-wrapper table-responsive" id="log-table" data-is-ok="{{ (status.lower() == 'ok') | tojson }}">
+  <table class="table table-hover align-middle mb-0">
+    <!-- 🎯 Gunakan class kondisional -->
+    <thead class="{% if status.lower() == 'ok' %}thead-ok{% else %}thead-nok{% endif %}">
+      <tr>
+        {% for h in headers %}
+          <th>{{ h }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody id="log-table-body">
+      {% for log in logs %}
+      <tr data-id="{{ log.id }}">
+        <td>{{ log.scan_id }}</td>
+        <td>{{ log.container }}</td>
+        <td>{{ log.plate }}</td>
+        <td>{{ log.folder_status }}</td>
+        <td>{{ log.jam_scan }}</td>
+        <td>{{ log.update_time }}</td>
+        <td>{{ log.time_diff }}</td>
+        <td>{{ log.image_count }}</td>
+        {% if status.lower() == "ok" %}
+          <td><span class="badge bg-success">{{ log.status }}</span></td>
+        {% else %}
+          <td><span class="badge bg-danger">{{ log.status }}</span></td>
+          <td>{{ log.detail }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+
+<script>
+(function(){
+  const tbody = document.getElementById('log-table-body');
+  let lastId = (function(){
+    const first = tbody.querySelector('tr[data-id]');
+    return first ? parseInt(first.dataset.id) : 0;
+  })();
+  const isOkPage = JSON.parse(document.getElementById('log-table').dataset.isOk);
+  async function pollNew(){
+    try{
+      const res = await fetch(`/api/logs/{{ status }}?limit=50`);
+      if(!res.ok) return;
+      const rows = await res.json();
+      // filter rows newer than lastId and sort ascending so older new rows insert first
+      const newRows = rows.filter(r => r.id && r.id > lastId).sort((a,b)=> a.id - b.id);
+      if(newRows.length){
+        newRows.forEach(r=>{
+          const tr = document.createElement('tr');
+          tr.dataset.id = r.id;
+          const statusCell = isOkPage
+            ? `<td><span class="badge bg-success">${r.status || ''}</span></td>`
+            : `<td><span class="badge bg-danger">${r.status || ''}</span></td><td>${r.detail || ''}</td>`;
+          tr.innerHTML = `
+            <td>${r.scan_id || ''}</td>
+            <td>${r.container || ''}</td>
+            <td>${r.plate || ''}</td>
+            <td>${r.folder_status || '-'}</td>
+            <td>${r.jam_scan || ''}</td>
+            <td>${r.update_time || ''}</td>
+            <td>${r.time_diff || ''}</td>
+            <td>${r.image_count || 0}</td>
+            ${statusCell}
+          `;
+          tbody.insertBefore(tr, tbody.firstChild);
+        });
+        lastId = newRows[newRows.length - 1].id;
+      }
+    }catch(e){
+      console.error('Realtime poll error:', e);
+    }
+  }
+  // poll interval (adjust as needed)
+  setInterval(pollNew, 2000);
+})();
+</script>
+{% endblock %}

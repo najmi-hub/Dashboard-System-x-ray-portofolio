@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* Biar semua card punya tinggi seragam */
+  .equal-card {
+    height: 12rem;
+    display: flex;
+  }
+  .equal-card .card-body {
+    margin: auto; /* ⬅️ Bikin isi card-body selalu di tengah */
+
+  }
+
+  /* ADDED: buat font tabel lebih kecil dan rapat */
+  .table-responsive table,
+  .table-responsive table thead th,
+  .table-responsive table tbody td {
+    font-size: 22px;
+  }
+  .table-responsive table thead th {
+    padding: 0.25rem 0.4rem;
+  }
+  .table-responsive table tbody td {
+    padding: 0.2rem 0.35rem;
+  }
+
+  /* Perkecil font hanya untuk CARD 2 (Status Perangkat) */
+  .status-device-card {
+    font-size: 0.85rem; /* atur ukuran font dasar di dalam card */
+  }
+  .status-device-card .card-body h6 {
+    font-size: 0.95rem; /* judul card sedikit lebih kecil */
+  }
+  .status-device-card .card-body p {
+    margin-bottom: 0.25rem;
+    font-size: 0.72rem;
+  }
+  .status-device-card .card-body small {
+    font-size: 0.65rem;
+  }
+  .status-device-card .btn {
+    font-size: 0.55rem;
+    padding: 0.25rem 0.4rem;
+  }
+</style>
+
+<div class="container-fluid py-4">
+
+
+  <!-- Cards Row -->
+  <div class="row g-4 mb-4">
+
+    <!-- CARD 1: Status Scan -->
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-lg border-0 rounded-4 bg-gradient text-white equal-card" 
+           style="background: linear-gradient(135deg, #007bff, #00c6ff);">
+        <div class="card-body text-center py-4">
+          <h6 class="fw-bold text-uppercase mb-3">Status Scan</h6>
+          <div class="flex flex-column align-items-center mb-2">
+            <a href="{{ url_for('detail_status', status='ok') }}" class="text-white text-decoration-none me-2">
+              ✅ <strong>{{ metrics.today_stats.today_ok }}</strong> OK
+            </a> 
+            <a href="{{ url_for('detail_status', status='nok') }}" class="text-warning text-decoration-none ms-2">
+              ⚠️ <strong>{{ metrics.today_stats.today_nok }}</strong> NOK 
+            </a>
+          </div>
+          <div class="small text-light opacity-75">Total: {{ metrics.ok + metrics.nok }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2: Status Perangkat (Hanya Nama dan Status) -->
+<div class="col-xl-3 col-md-6">
+  <div class="card shadow-lg border-0 rounded-4 equal-card status-device-card" 
+       style="background: linear-gradient(135deg, #28a745, #91ffb1); color: #fff;">
+    <div class="card-body text-center py-4">
+      <h6 class="fw-bold text-uppercase mb-3">Status Perangkat</h6>
+      <div class="text-start px-3">
+        {% for name, device in metrics.ping.items() %}
+        <p class="mb-1">
+          <strong>{{ name }}:</strong> 
+          <span class="{{ 'text-success' if device.status == 'online' else 'text-warning' }}">
+            {{ device.status | upper }}
+          </span>
+        </p>
+        {% endfor %}
+      </div>
+      <button class="btn btn-light btn-sm mt-2 shadow-sm" onclick="location.reload()">
+        <i class="fa fa-sync"></i> Refresh
+      </button>
+    </div>
+  </div>
+</div>
+
+    <!-- CARD 3: Status Penyimpanan -->
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-lg border-0 rounded-4 equal-card" 
+           style="background: linear-gradient(135deg, #6f42c1, #b07cff); color: #fff;">
+        <div class="card-body text-center py-4">
+          <h6 class="fw-bold text-uppercase mb-3">Status Penyimpanan</h6>
+          <div class="display-6 fw-bold mb-1">
+            {{ metrics.storage.free_percent }}%
+          </div>
+          <div class="small opacity-75 mb-3">Free Space</div>
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar 
+                {% if metrics.storage.free_percent >= 50 %}bg-success
+                {% elif metrics.storage.free_percent >= 20 %}bg-warning
+                {% else %}bg-danger{% endif %}" 
+                role="progressbar" 
+                style="width: {{ metrics.storage.free_percent }}%; border-radius: 10px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 4: Success Rate -->
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-lg border-0 rounded-4 equal-card" 
+           style="background: linear-gradient(135deg, #fd7e14, #ffb366); color: #fff;">
+        <div class="card-body text-center py-4">
+          <h6 class="fw-bold text-uppercase mb-3">Success Rate</h6>
+          <div class="display-6 fw-bold">{{ "%.2f"|format(metrics.success_rate) }}%</div>
+          <div class="small opacity-75">Berdasarkan total OK vs total</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Table Section -->
+  <div class="card shadow border-0 rounded-4">
+    <div class="card-body bg-white rounded-4">
+      <h5 class="fw-bold text-primary mb-3">📋 Data Log Terbaru</h5>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID Scan</th>
+              <th>No Container</th>
+              <th>Jam Scan</th>
+              <th>Jam Update</th>
+              <th>Selisih Waktu</th>
+              <th>Jumlah Gambar</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="index-log-table-body">
+            {% for log in logs %}
+            <tr data-id="{{ log.id }}">
+              <td>{{ log.scan_id }}</td>
+              <td>{{ log.container }}</td>
+              <td>{{ log.jam_scan }}</td>
+              <td>{{ log.update_time or '-' }}</td>
+              <td>{{ log.time_diff or '-' }}</td>
+              <td>{{ log.image_count or '-' }}</td>
+              <td>
+                {% if log.status == 'OK' %}
+                  <span class="badge bg-success">OK</span>
+                {% else %}
+                  <span class="badge bg-danger">NOK</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-3">Tidak ada data log tersedia.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const tbody = document.getElementById('index-log-table-body');
+  if(!tbody) return;
+  let lastId = (function(){ 
+    const first = tbody.querySelector('tr[data-id]'); 
+    return first ? parseInt(first.dataset.id) : 0; 
+  })();
+
+  async function pollIndex(){
+    try{
+      const res = await fetch('/api/logs/latest');
+      if(!res.ok) return;
+      const rows = await res.json();
+      // Filter rows yang lebih baru dari lastId dan urutkan dari terlama ke terbaru
+      const newRows = rows.filter(r => r.id && r.id > lastId).sort((a,b)=> a.id - b.id);
+      if(newRows.length){
+        newRows.forEach(r=>{
+          const tr = document.createElement('tr');
+          tr.dataset.id = r.id;
+          // Sesuaikan kolom dengan struktur tabel di index.html
+          tr.innerHTML = `
+            <td>${r.scan_id || ''}</td>
+            <td>${r.container || ''}</td>
+            <td>${r.jam_scan || ''}</td>
+            <td>${r.update_time || '-'}</td>
+            <td>${r.time_diff || '-'}</td>
+            <td>${r.image_count || 0}</td>
+            <td>
+              <span class="badge ${r.status=='OK' ? 'bg-success' : 'bg-danger'}">${r.status || ''}</span>
+            </td>
+          `;
+          // Tambahkan ke atas tabel (baru di atas)
+          tbody.insertBefore(tr, tbody.firstChild);
+        });
+        lastId = newRows[newRows.length - 1].id;
+      }
+    }catch(e){ 
+      console.error('Realtime poll error:', e); 
+    }
+  }
+  // Poll setiap 2 detik
+  setInterval(pollIndex, 2000);
+})();
+</script>
+{% endblock %}

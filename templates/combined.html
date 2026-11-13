@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .table-wrapper {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(90deg, #ffffff, #d9e0e4);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+    margin-top: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filter-form input,
+  .filter-form select,
+  .filter-form button {
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .filter-form button {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .filter-form button:hover { opacity: 0.9; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.6rem; /* font lebih kecil */
+  }
+
+  thead th {
+    padding: 0.35rem 0.5rem; /* lebih rapat */
+    text-align: left;
+    color: white;
+  }
+
+  /* 🎨 Warna berbeda untuk OK & NOK */
+  .thead-ok {
+    background: linear-gradient(90deg, #1edf62, #28a745);
+  }
+
+  .thead-nok {
+    background: linear-gradient(90deg, #fa0404c9, #dc3545);
+  }
+
+  tbody td {
+    padding: 0.25rem 0.4rem; /* padding diperkecil agar kolom lebih rapat */
+    font-size: 0.58rem; /* font sel sedikit lebih kecil */
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  tbody tr:nth-child(even) { background: #f9fafb; }
+  tbody tr:hover { background: #f1f5f9; transition: 0.12s; }
+
+  @media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .filter-form { flex-direction: column; width: 100%; }
+    .filter-form input, .filter-form select, .filter-form button { width: 100%; }
+  }
+
+  /* Sesuaikan lebar kolom spesifik, dibuat lebih kecil dari sebelumnya */
+  .table-wrapper table thead th:nth-child(5),
+  .table-wrapper table tbody td:nth-child(5) {
+    min-width: 120px;
+    width: 120px;
+    white-space: nowrap;
+  }
+
+  .table-wrapper table thead th:nth-child(6),
+  .table-wrapper table tbody td:nth-child(6) {
+    min-width: 120px;
+    width: 120px;
+    white-space: nowrap;
+  }
+
+  .table-wrapper table thead th:nth-child(7),
+  .table-wrapper table tbody td:nth-child(7) {
+    min-width: 100px;
+    width: 110px;
+    white-space: nowrap;
+  }
+
+  /* kecilkan jarak vertikal baris */
+  .table-wrapper tbody td {
+    line-height: 1.1;
+  }
+</style>
+
+<div class="page-header">
+  <h3 class="page-title">Log Gabungan</h3>
+</div>
+
+<div class="table-wrapper table-responsive" id="combined-table">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="thead-ok">  <!-- Gunakan warna OK karena ini kombinasi -->
+      <tr>
+        <th>ID Scan</th>
+        <th>No Container</th>
+        <th>Jumlah Gambar</th>
+        <th>Status Folder</th>
+        <th>Status Log</th>
+        <th>Jam Scan</th>
+        <th>Update Time</th>
+        <th>Time Diff</th>
+      </tr>
+    </thead>
+    <tbody id="combined-table-body">
+      {% for item in combined %}
+      <tr data-id="{{ item.scan_id }}">
+        <td>{{ item.scan_id }}</td>
+        <td>{{ item.container }}</td>
+        <td>{{ item.folder_image_count }}</td>
+        <td>
+          {% if item.folder_status == 'OK' %}
+            <span class="badge bg-success">{{ item.folder_status }}</span>
+          {% else %}
+            <span class="badge bg-danger">{{ item.folder_status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if item.log_status != '-' %}
+            {% if item.log_status == 'OK' %}
+              <span class="badge bg-success">{{ item.log_status }}</span>
+            {% else %}
+              <span class="badge bg-danger">{{ item.log_status }}</span>
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>{{ item.jam_scan }}</td>
+        <td>{{ item.update_time }}</td>
+        <td>{{ item.time_diff }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center">Tidak ada data scan hari ini.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  const tbody = document.getElementById('combined-table-body');
+  if(!tbody) return;
+
+  async function pollCombined(){
+    try{
+      const res = await fetch('/api/combined/latest');
+      if(!res.ok) return;
+      const updates = await res.json();
+
+      for(const item of updates) {
+        // Cari baris yang sudah ada berdasarkan scan_id
+        const row = tbody.querySelector(`tr[data-id="${item.scan_id}"]`);
+        if(row) {
+          // Update kolom log jika datanya ada
+          if(item.container !== '-') row.cells[1].textContent = item.container;
+          if(item.jumlah_gambar !== '-') row.cells[2].textContent = item.jumlah_gambar;
+          if(item.log_status !== '-') {
+            let statusCell = row.cells[4];
+            if(item.log_status === 'OK') {
+              statusCell.innerHTML = '<span class="badge bg-success">' + item.log_status + '</span>';
+            } else {
+              statusCell.innerHTML = '<span class="badge bg-danger">' + item.log_status + '</span>';
+            }
+          }
+          if(item.jam_scan !== '-') row.cells[5].textContent = item.jam_scan;
+          if(item.update_time !== '-') row.cells[6].textContent = item.update_time;
+          if(item.time_diff !== '-') row.cells[7].textContent = item.time_diff;
+        }
+        // Jangan tambah baris baru
+      }
+    }catch(e){
+      console.error('Combined poll error:', e);
+    }
+  }
+
+  // poll interval (adjust as needed)
+  setInterval(pollCombined, 2000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base_v2.html" %}
+
+{% block title %}Data Real Server - X-Ray Realtime{% endblock %}
+
+{% block extra_head %}
+<!-- GOOGLE FONTS (PLUS JAKARTA SANS & JETBRAINS MONO) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  .tech-table-container { 
+    background: #0f172a; 
+    border: 1px solid #1e293b; 
+    border-radius: 16px; 
+    overflow: hidden; 
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+  }
+
+  .tech-table-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0284c7 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    min-height: 72px !important;
+  }
+
+  .tech-table {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  /* KUNCI ALIGNMENT HEADER KIRI & KANAN RATA TENGAH (SIMETRIS PERFECT) */
+  .tech-table th,
+  .tech-table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  .tech-table thead th { 
+    background-color: #1e293b !important; 
+    color: #38bdf8 !important; 
+    font-size: 0.78rem !important; 
+    font-weight: 600 !important; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
+    height: 46px !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .tech-table tbody td { 
+    white-space: nowrap !important;
+    font-size: 0.86rem !important;
+    font-weight: 400 !important;
+    height: 44px !important;
+    padding: 0 0.5rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tech-table, .tech-table > :not(caption) > * > * { 
+    background-color: #0f172a !important; 
+    color: #f1f5f9 !important; 
+    border-bottom-color: #1e293b !important; 
+  }
+
+  .tech-mono {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.2px;
+  }
+
+  body.light-mode .tech-table-container { background: #ffffff !important; border: 1px solid #cbd5e1 !important; }
+  body.light-mode .tech-table, 
+  body.light-mode .tech-table > :not(caption) > * > * { 
+    background-color: #ffffff !important; 
+    color: #0f172a !important; 
+    border-bottom-color: #e2e8f0 !important; 
+  }
+  body.light-mode .tech-table thead th { background-color: #f1f5f9 !important; color: #0284c7 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="p-3 rounded-4 text-white d-flex justify-content-between align-items-center shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0284c7 100%); border: 1px solid rgba(255,255,255,0.15);">
+        <div>
+          <h5 class="fw-bold mb-1"><i class="fa-solid fa-layer-group text-info me-2"></i> Data Real Server (Metadata X-Ray)</h5>
+          <small class="opacity-75">Daftar nama file & folder hasil scan dari PC Server (Tanpa Beban Gambar)</small>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-light font-semibold shadow-sm" onclick="fetchRealScans();">
+            <i class="fa-solid fa-rotate me-1 text-primary"></i> Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tech-table-container">
+    <div class="tech-table-header p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h6 class="fw-bold mb-1 text-nowrap">
+          <i class="fa-solid fa-list-check me-2 text-info"></i> Daftar File Pemindaian
+        </h6>
+        <small class="text-white-50" id="real-scan-count-info">Memuat data...</small>
+      </div>
+      
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width: 260px;">
+          <span class="input-group-text bg-transparent text-info border-secondary">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </span>
+          <input type="text" id="real-search-input" class="form-control bg-dark text-white border-secondary" placeholder="Cari Folder / Nama File...">
+        </div>
+
+        <select id="real-page-size" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: 85px;">
+          <option value="15">15/hal</option>
+          <option value="25" selected>25/hal</option>
+          <option value="50">50/hal</option>
+        </select>
+
+        <span id="real-sync-badge" class="badge bg-info bg-opacity-25 text-info border border-info px-3 py-2 fw-semibold">
+          <span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s
+        </span>
+      </div>
+    </div>
+
+    <div class="table-responsive" style="max-height: 540px;">
+      <table class="table tech-table align-middle mb-0">
+        <thead class="sticky-top" style="z-index: 5;">
+          <tr>
+            <th style="width: 6%;">#</th>
+            <th style="width: 18%;">ID Folder Scan</th>
+            <th style="width: 24%;">Tanggal Scan</th>
+            <th style="width: 26%;">Nama File Icon</th>
+            <th style="width: 26%;">Nama File X-Ray Utama</th>
+          </tr>
+        </thead>
+        <tbody id="real-scan-table-body">
+          <tr>
+            <td colspan="5" class="text-center text-secondary py-4">
+              <i class="fa-solid fa-spinner fa-spin me-2"></i>Mengambil metadata pemindaian...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary bg-dark bg-opacity-50" style="height: 46px;">
+      <div class="small text-white-50" id="real-pagination-summary" style="font-size: 0.78rem;">
+        Menampilkan 0 - 0 dari 0 data
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <button class="btn btn-sm btn-outline-secondary text-white" id="btn-real-prev" onclick="changeRealPage(-1)" disabled>
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="px-2 small fw-semibold text-info" id="real-page-label" style="font-size: 0.78rem;">Hal 1 / 1</span>
+        <button class="btn btn-sm btn-outline-secondary text-white" id="btn-real-next" onclick="changeRealPage(1)" disabled>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allRealScans = [];
+let filteredRealScans = [];
+let currentRealPage = 1;
+let realPageSize = 25;
+
+document.getElementById('real-search-input')?.addEventListener('input', () => {
+  currentRealPage = 1;
+  applyRealFilter();
+});
+
+document.getElementById('real-page-size')?.addEventListener('change', (e) => {
+  realPageSize = parseInt(e.target.value, 10) || 25;
+  currentRealPage = 1;
+  applyRealFilter();
+});
+
+function applyRealFilter() {
+  const query = document.getElementById('real-search-input')?.value.toLowerCase().trim() || '';
+  if (!query) {
+    filteredRealScans = [...allRealScans];
+  } else {
+    filteredRealScans = allRealScans.filter(item => {
+      const fname = (item.folder_name || '').toLowerCase();
+      const fpath = (item.folder_path || '').toLowerCase();
+      const mainImg = (item.main_image || '').toLowerCase();
+      return fname.includes(query) || fpath.includes(query) || mainImg.includes(query);
+    });
+  }
+  renderRealTable();
+}
+
+function formatScanDate(item) {
+  if (item.created_at) {
+    return item.created_at;
+  }
+  return item.scan_date || '-';
+}
+
+function renderRealTable() {
+  const tbody = document.getElementById('real-scan-table-body');
+  const countInfo = document.getElementById('real-scan-count-info');
+  const summaryElem = document.getElementById('real-pagination-summary');
+  const pageLabel = document.getElementById('real-page-label');
+  const btnPrev = document.getElementById('btn-real-prev');
+  const btnNext = document.getElementById('btn-real-next');
+
+  const totalItems = filteredRealScans.length;
+  const totalPages = Math.ceil(totalItems / realPageSize) || 1;
+
+  if (currentRealPage > totalPages) currentRealPage = totalPages;
+  if (currentRealPage < 1) currentRealPage = 1;
+
+  const startIndex = (currentRealPage - 1) * realPageSize;
+  const endIndex = Math.min(startIndex + realPageSize, totalItems);
+  const pageData = filteredRealScans.slice(startIndex, endIndex);
+
+  if (countInfo) countInfo.textContent = `Total: ${allRealScans.length} folder scan terdeteksi`;
+  if (summaryElem) summaryElem.textContent = totalItems > 0 ? `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalItems} data` : 'Tidak ada data cocok';
+  if (pageLabel) pageLabel.textContent = `Hal ${currentRealPage} / ${totalPages}`;
+
+  if (btnPrev) btnPrev.disabled = currentRealPage === 1;
+  if (btnNext) btnNext.disabled = currentRealPage === totalPages || totalPages === 0;
+
+  if (!tbody) return;
+
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary py-4">Belum ada data scan di PC Server.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pageData.map((item, idx) => {
+    const globalNum = startIndex + idx + 1;
+    const folderName = item.folder_name || '-';
+    const displayDate = formatScanDate(item);
+    const mainImg = item.main_image || '-';
+    const iconImg = item.icon_image || '-';
+
+    return `
+      <tr>
+        <td class="text-secondary opacity-75">${globalNum}</td>
+        <td class="text-info tech-mono">${folderName}</td>
+        <td class="text-nowrap">${displayDate}</td>
+        <td class="tech-mono text-warning" title="${iconImg}">${iconImg}</td>
+        <td class="tech-mono text-success" title="${mainImg}">${mainImg}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function changeRealPage(delta) {
+  currentRealPage += delta;
+  renderRealTable();
+}
+
+async function fetchRealScans() {
+  const syncBadge = document.getElementById('real-sync-badge');
+  try {
+    const res = await fetch('/api/v2/real-scans');
+    if (!res.ok) throw new Error('Response Error');
+    const result = await res.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      allRealScans = result.data;
+      applyRealFilter();
+    }
+
+    if (syncBadge) {
+      syncBadge.className = 'badge bg-info bg-opacity-25 text-info border border-info px-3 py-2 fw-semibold';
+      syncBadge.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-info animate-ping me-1"></span> Sync 3s`;
+    }
+  } catch (e) {
+    if (syncBadge) {
+      syncBadge.className = 'badge bg-danger bg-opacity-25 text-danger border border-danger px-3 py-2 fw-semibold';
+      syncBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Offline`;
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetchRealScans();
+  setInterval(fetchRealScans, 3000);
+});
+</script>
+{% endblock %}

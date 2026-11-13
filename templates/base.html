@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <!-- Bootstrap Core CSS (local) -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- FontAwesome (local) -->
+    <link href="{{ url_for('static', filename='css/all.min.css') }}" rel="stylesheet">
+
+    <!-- DataTables CSS (local) -->
+    <link href="{{ url_for('static', filename='css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+
+    <!-- Custom Style -->
+    <style>
+        body {
+            font-family: "Nunito", sans-serif;
+            background-color: #7089d4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .topbar {
+            background: white;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e3e6f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* Topbar nav (clean, non-button links) */
+        .topbar-nav {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .topbar-nav a.nav-link {
+            color: #2c3e50;
+            text-decoration: none;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .topbar-nav a.nav-link:hover,
+        .topbar-nav a.nav-link.active {
+            background: #f1f5f9;
+            color: #0b2a66;
+        }
+        .topbar .user-area {
+            display:flex;
+            gap:0.75rem;
+            align-items:center;
+        }
+        .topbar .user-area .username { font-weight:600; color:#2c3e50; }
+        .topbar .user-area a.logout { text-decoration:none; color:#c92a2a; }
+
+        /* Warna status */
+        .status-ok {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-nok {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        /* Progress bar smooth */
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+
+        /* Card hover effect */
+        .card {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar d-flex justify-content-between align-items-center">
+    <h5 class="m-0 text-primary fw-bold"><a href="{{ url_for('index') }}" class="navbar-brand fw-bold text-primary">
+    Dashboard System
+</a></h5>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="{{ url_for('rescan_checker') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-search me-1"></i> Rescan Checker
+        </a>
+        <a href="{{ url_for('export_page') }}" class="btn btn-sm btn-outline-success">
+            <i class="fas fa-download me-1"></i> Export Excel
+        </a>
+        <span class="text-muted small">Hi, {{ current_user.username }}</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger">
+            <i class="fas fa-sign-out-alt me-1"></i> Logout
+        </a>
+    </div>
+</div>
+
+
+
+<!-- Content Wrapper -->
+<div class="content-wrapper container-fluid">
+    {% block content %}{% endblock %}
+</div>
+
+
+<!-- jQuery (local) -->
+<script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+
+<!-- Bootstrap Bundle (local) -->
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<!-- DataTables JS (local) -->
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dataTables.bootstrap5.min.js') }}"></script>
+
+<script>
+$(document).ready(function () {
+    $('#dataTable').DataTable({
+        pageLength: 10,
+        lengthMenu: [5, 10, 25, 50],
+        order: [[0, 'desc']]
+    });
+});
+</script>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

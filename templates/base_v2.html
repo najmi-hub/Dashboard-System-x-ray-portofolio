@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Command Center Monitoring{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+
+  <style>
+    :root {
+      --sidebar-width: 250px;
+      --sidebar-bg-dark: #0f172a;
+      --sidebar-bg-light: #ffffff;
+      --body-bg-dark: #090d16;
+      --body-bg-light: #f8fafc;
+    }
+
+    body {
+      background-color: var(--body-bg-dark) !important;
+      color: #f8fafc !important;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    #sidebar {
+      width: var(--sidebar-width);
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 1000;
+      background: var(--sidebar-bg-dark);
+      border-right: 1px solid #1e293b;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sidebar.collapsed {
+      left: calc(-1 * var(--sidebar-width));
+    }
+
+    .sidebar-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .sidebar-menu {
+      padding: 1rem 0;
+      list-style: none;
+      margin: 0;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu .menu-category {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #64748b;
+      padding: 0.75rem 1.5rem 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu a {
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-left: 4px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border-left-color: #38bdf8;
+    }
+
+    #content-wrapper {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #content-wrapper.expanded {
+      margin-left: 0;
+    }
+
+    .topbar {
+      background: #0f172a !important;
+      border-bottom: 1px solid #1e293b !important;
+      padding: 0.85rem 1.5rem !important;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-toggle-sidebar {
+      background: transparent !important;
+      border: 1px solid #334155 !important;
+      color: #38bdf8 !important;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-toggle-sidebar:hover {
+      background: #1e293b !important;
+    }
+
+    .btn-mode-switcher {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid #334155 !important;
+      color: #f8fafc !important;
+      border-radius: 50rem;
+      padding: 0.35rem 0.9rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-mode-switcher:hover {
+      background: #1e293b !important;
+      border-color: #38bdf8 !important;
+    }
+
+    body.light-mode .topbar {
+      background: #ffffff !important;
+      border-bottom-color: #cbd5e1 !important;
+    }
+    body.light-mode .btn-toggle-sidebar {
+      border-color: #cbd5e1 !important;
+      color: #0284c7 !important;
+    }
+    body.light-mode .btn-mode-switcher {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+
+    body.light-mode {
+      background-color: var(--body-bg-light) !important;
+      color: #0f172a !important;
+    }
+
+    body.light-mode #sidebar {
+      background: var(--sidebar-bg-light) !important;
+      border-right-color: #cbd5e1 !important;
+    }
+
+    body.light-mode .sidebar-header {
+      border-bottom-color: #e2e8f0 !important;
+    }
+
+    body.light-mode .sidebar-menu .menu-category {
+      color: #64748b !important;
+    }
+
+    body.light-mode .sidebar-menu a {
+      color: #334155 !important;
+    }
+
+    body.light-mode .sidebar-menu a:hover, 
+    body.light-mode .sidebar-menu a.active {
+      color: #0284c7 !important;
+      background: #e0f2fe !important;
+      border-left-color: #0284c7 !important;
+    }
+
+    body.light-mode .text-adaptive {
+      color: #0f172a !important;
+    }
+
+    body.light-mode .text-info {
+      color: #0284c7 !important;
+    }
+
+    body.light-mode .card, 
+    body.light-mode .chart-box, 
+    body.light-mode .tech-table-container,
+    body.light-mode .content-card,
+    body.light-mode .stat-card,
+    body.light-mode .metric-card {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    body.light-mode .text-muted,
+    body.light-mode .text-secondary {
+      color: #475569 !important;
+    }
+
+    body.light-mode table td .text-info,
+    body.light-mode table td .badge.border-info,
+    body.light-mode table td [class*="text-info"] {
+      background-color: #e0f2fe !important;
+      color: #0369a1 !important;
+      border-color: #0284c7 !important;
+      font-weight: 800 !important;
+    }
+
+    body.light-mode table td .badge-dark,
+    body.light-mode table td .bg-dark {
+      background-color: #e2e8f0 !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      font-weight: 700 !important;
+    }
+
+    body.light-mode .form-control,
+    body.light-mode .form-select,
+    body.light-mode input {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="fw-bold text-info fs-5 d-flex align-items-center gap-2">
+        <i class="fa-solid fa-square-poll-vertical"></i> Command Center
+      </span>
+    </div>
+
+    <ul class="sidebar-menu">
+      <li class="menu-category">Menu Utama</li>
+      <li>
+        <a href="{{ url_for('index_v2') }}" class="{{ 'active' if request.endpoint == 'index_v2' }}">
+          <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+      </li>
+
+      <li class="menu-category">Realtime Server</li>
+      <li>
+        <a href="{{ url_for('real_server_page') }}" class="{{ 'active' if request.endpoint in ['real_server_page', 'real_server_page_v2'] }}">
+          <i class="fa-solid fa-layer-group text-info"></i> Data Real Server
+        </a>
+      </li>
+
+      <li class="menu-category">Detail Log Transaksi</li>
+      <li>
+        <a href="{{ url_for('detail_status_v2', status='ok') }}" class="{{ 'active' if request.endpoint == 'detail_status_v2' and status == 'ok' }}">
+          <i class="fa-solid fa-circle-check text-success"></i> Detail Log OK
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('detail_status_v2', status='nok') }}" class="{{ 'active' if request.endpoint == 'detail_status_v2' and status == 'nok' }}">
+          <i class="fa-solid fa-circle-xmark text-danger"></i> Detail Log NOK
+        </a>
+      </li>
+
+      <li class="menu-category">Fitur System</li>
+      <li>
+        <a href="{{ url_for('rescan_checker') }}" class="{{ 'active' if request.endpoint in ['rescan_checker', 'rescan_checker_v2'] }}">
+          <i class="fa-solid fa-magnifying-glass text-warning"></i> Rescan Checker
+        </a>
+      </li>
+      <li>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#manualResendModal">
+          <i class="fa-solid fa-paper-plane text-cyan-400"></i> Manual Resend
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('export_page') }}" class="{{ 'active' if request.endpoint in ['export_page', 'export_page_v2'] }}">
+          <i class="fa-solid fa-file-excel text-success"></i> Export Excel
+        </a>
+      </li>
+    </ul>
+
+    <div class="p-3 border-top border-secondary">
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 text-decoration-none">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- CONTENT WRAPPER -->
+  <div id="content-wrapper">
+    <header class="topbar">
+      <div class="d-flex align-items-center gap-3">
+        <button id="sidebarToggle" class="btn-toggle-sidebar" title="Buka/Tutup Sidebar">
+          <i class="fa-solid fa-bars fs-6"></i>
+        </button>
+        <span class="fw-semibold text-adaptive small d-none d-md-inline">System Monitoring & Operational Analytics</span>
+      </div>
+
+      <div class="d-flex align-items-center gap-3">
+        {% if metrics and metrics.watcher_online %}
+          <span class="badge bg-success bg-opacity-25 text-success border border-success px-3 py-2 rounded-pill small d-flex align-items-center gap-2 fw-semibold">
+            <i class="fa-solid fa-circle text-success fa-beat-fade" style="font-size: 0.55rem;"></i> Watcher: ONLINE
+          </span>
+        {% else %}
+          <span class="badge bg-danger bg-opacity-25 text-danger border border-danger px-3 py-2 rounded-pill small d-flex align-items-center gap-2 fw-semibold">
+            <i class="fa-solid fa-circle text-danger" style="font-size: 0.55rem;"></i> Watcher: OFFLINE
+          </span>
+        {% endif %}
+
+        <button id="theme-toggle-btn" class="btn-mode-switcher" type="button">
+          <i id="theme-icon" class="fa-solid fa-moon text-info me-1"></i>
+          <span id="theme-text">Mode Malam</span>
+        </button>
+
+        <span class="small text-adaptive">
+          Hi, <strong class="text-info">{{ current_user.username if current_user.is_authenticated else 'admin' }}</strong>
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-grow-1 p-4">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- MODAL POPUP MANUAL RESEND DATA NGAMBANG -->
+  <div class="modal fade" id="manualResendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold text-info">
+            <i class="fa-solid fa-paper-plane me-2 text-cyan-400"></i>Manual Resend Data Ngambang
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-secondary mb-3">
+            Gunakan form ini untuk mengirim ulang transaksi yang <strong>tidak terdaftar/terhapus di DB lokal</strong> tetapi payload <code>ftp_path</code> dan <code>image_msg</code> (XML IDR) tersedia dari catatan log.
+          </p>
+
+          <div id="manualAlertBox" class="alert d-none" role="alert"></div>
+
+          <form id="manualResendForm">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary">Task ID / PICNO (Opsional):</label>
+              <input type="text" id="manualTaskId" class="form-control bg-dark text-white border-secondary" placeholder="Contoh: 62001FS0120261111111532">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-info">FTP Path (Wajib):</label>
+              <input type="text" id="manualFtpPath" class="form-control bg-dark text-white border-secondary font-monospace" placeholder="Contoh: /62001FS01/2026/1111/1115/" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-info">XML Payload - image_msg (Wajib):</label>
+              <textarea id="manualImageMsg" class="form-control bg-dark text-white border-secondary font-monospace text-xs" rows="8" placeholder="Paste isi string XML <IDR>...</IDR> di sini..." required></textarea>
+            </div>
+
+            <button type="submit" id="btnSubmitManualResend" class="btn btn-info w-100 fw-bold py-2">
+              🚀 Kirim Payload ke Server MTI (10.15.42.126)
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const contentWrapper = document.getElementById('content-wrapper');
+
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      contentWrapper.classList.toggle('expanded');
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    });
+
+    (function(){
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      const themeIcon = document.getElementById('theme-icon');
+      const themeText = document.getElementById('theme-text');
+
+      function applyTheme(theme) {
+        if (theme === 'light') {
+          document.body.classList.add('light-mode');
+          document.documentElement.classList.remove('dark');
+          if (themeIcon) themeIcon.className = 'fa-solid fa-sun text-warning me-1';
+          if (themeText) themeText.textContent = 'Mode Siang';
+        } else {
+          document.body.classList.remove('light-mode');
+          document.documentElement.classList.add('dark');
+          if (themeIcon) themeIcon.className = 'fa-solid fa-moon text-info me-1';
+          if (themeText) themeText.textContent = 'Mode Malam';
+        }
+        window.dispatchEvent(new Event('themeChanged'));
+      }
+
+      const savedTheme = localStorage.getItem('dashboard_theme') || 'dark';
+      applyTheme(savedTheme);
+
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const isLight = document.body.classList.contains('light-mode');
+          const newTheme = isLight ? 'dark' : 'light';
+          localStorage.setItem('dashboard_theme', newTheme);
+          applyTheme(newTheme);
+        });
+      }
+    })();
+
+    document.getElementById('manualResendForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnSubmitManualResend');
+        const alertBox = document.getElementById('manualAlertBox');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Memproses & Menembak API MTI...';
+        alertBox.className = 'alert d-none';
+
+        const payload = {
+            task_id: document.getElementById('manualTaskId').value,
+            ftp_path: document.getElementById('manualFtpPath').value,
+            image_msg: document.getElementById('manualImageMsg').value
+        };
+
+        try {
+            const response = await fetch('/api/manual-resend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                alertBox.className = 'alert alert-success border-success bg-success bg-opacity-25 text-white';
+                alertBox.innerHTML = `<strong>[BERHASIL - ${result.code}]</strong> ${result.message}`;
+            } else {
+                alertBox.className = 'alert alert-danger border-danger bg-danger bg-opacity-25 text-white';
+                alertBox.innerHTML = `<strong>[GAGAL - ${result.code}]</strong> ${result.error}`;
+            }
+        } catch (err) {
+            alertBox.className = 'alert alert-danger border-danger bg-danger bg-opacity-25 text-white';
+            alertBox.innerHTML = `<strong>[ERROR]</strong> Gagal terhubung ke server lokal Flask: ${err}`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Kirim Payload ke Server MTI (10.15.42.126)';
+        }
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

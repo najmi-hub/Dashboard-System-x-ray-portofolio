@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .scan-wrapper {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+  .page-header {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(90deg, #ffffff, #d9e0e4);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+    margin-top: 20px;
+    letter-spacing: 0.5px;
+  }
+  .status-ok { color: #28a745; font-weight: bold; }
+  .status-failed { color: #dc3545; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+  thead th { background: linear-gradient(90deg, #4a6fa6, #6b8cbc); color: white; }
+  tr:hover { background: #f9f9f9; }
+  code { font-family: monospace; background: #f1f1f1; padding: 2px 4px; border-radius: 3px; }
+</style>
+
+<div class="page-header">
+  <h2 class="page-title">Tabel Hasil Scan Real-Time</h2>
+</div>
+
+<div class="scan-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>ID Scan</th>
+        <th>Tanggal</th>
+        <th>Nomor Urut</th>
+        <th>Jumlah Gambar</th>
+        <th>Status</th>
+        <th>Waktu Update</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in scans %}
+      <tr>
+        <td><code>{{ s.scan_id }}</code></td>
+        <td>{{ s.tanggal }}</td>
+        <td>{{ s.nomor_urut }}</td>
+        <td>{{ s.image_count }}</td>
+        <td>
+          {% if s.status == "OK" %}
+            <span class="status-ok">✅ OK</span>
+          {% else %}
+            <span class="status-failed">❌ Failed</span>
+          {% endif %}
+        </td>
+        <td>{{ s.last_checked.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center">Tidak ada data scan.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Auto-refresh tiap 10 detik -->
+<script>
+  setTimeout(() => window.location.reload(), 500);
+</script>
+{% endblock %}

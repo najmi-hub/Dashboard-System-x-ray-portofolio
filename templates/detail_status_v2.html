@@ -1,0 +1,309 @@
+{% extends "base_v2.html" %}
+
+{% block title %}Detail Log {{ status | upper }} - Command Center{% endblock %}
+
+{% block content %}
+<style>
+  .tech-table-container { 
+    background: #0f172a; 
+    border: 1px solid #1e293b; 
+    border-radius: 14px; 
+    overflow: hidden; 
+  }
+
+  .tech-table th, 
+  .tech-table td { 
+    text-align: center !important; 
+    vertical-align: middle !important; 
+  }
+
+  .tech-table, .tech-table > :not(caption) > * > * { 
+    background-color: transparent !important; 
+    color: inherit !important; 
+    border-bottom-color: #1e293b !important; 
+  }
+  .tech-table thead th { 
+    background-color: #1e293b !important; 
+    color: #38bdf8 !important; 
+    font-size: 0.75rem; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+  }
+
+  body.light-mode .tech-table thead th { 
+    background-color: #e2e8f0 !important; 
+    color: #0284c7 !important; 
+  }
+
+  .badge-status-ok {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    min-width: 65px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+  }
+  .badge-status-nok {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    min-width: 65px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+  }
+</style>
+
+<!-- JUDUL HALAMAN & KARTU FILTER -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <h4 class="fw-bold mb-1 text-adaptive">
+      Detail Transaksi Log - 
+      <span class="{{ 'text-success' if status == 'ok' else 'text-danger' }}">{{ status | upper }}</span>
+    </h4>
+    <p class="small text-secondary mb-0">Daftar riwayat transaksi log sistem dengan status {{ status | upper }}.</p>
+  </div>
+  <span class="badge bg-dark border border-secondary text-info fs-6 px-3 py-2 rounded-3">
+    Total Data: <strong>{{ logs | length }}</strong>
+  </span>
+</div>
+
+<!-- FILTER SEARCH & TANGGAL -->
+<div class="content-card card bg-dark text-white border-secondary p-3 mb-4 rounded-3">
+  <form method="GET" action="{{ url_for('detail_status_v2', status=status) }}" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label small fw-bold text-secondary">Cari Data</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-dark text-info border-secondary"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" name="search" value="{{ search or '' }}" class="form-control bg-dark text-white border-secondary" placeholder="Scan ID, Container, Plat...">
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary">Dari Tanggal</label>
+      <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control form-control-sm bg-dark text-white border-secondary">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary">Sampai Tanggal</label>
+      <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control form-control-sm bg-dark text-white border-secondary">
+    </div>
+
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-sm btn-success w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> Terapkan</button>
+      <a href="{{ url_for('detail_status_v2', status=status) }}" class="btn btn-sm btn-outline-secondary" title="Reset Filter"><i class="fa-solid fa-rotate"></i></a>
+    </div>
+  </form>
+</div>
+
+<!-- TABEL DETAIL DATA LOG -->
+<div class="tech-table-container">
+  <div class="table-responsive">
+    <table class="table tech-table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>ID Scan</th>
+          <th>Nomor Container</th>
+          <th>Nomor Plat</th>
+          <th>Jam Scan</th>
+          <th>Jam Update</th>
+          <th>Selisih Waktu</th>
+          <th>Gambar</th>
+          <th>Status</th>
+          <th>{% if status == 'ok' %}Info Pengiriman{% else %}Keterangan Status{% endif %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="small text-secondary">{{ loop.index }}</td>
+          <td class="fw-bold text-info">{{ log.scan_id }}</td>
+          <td>
+            {% if log.container and log.container != '-' %}
+              <span class="badge bg-secondary bg-opacity-25 text-info font-monospace border border-info">{{ log.container }}</span>
+            {% else %}
+              <span class="badge bg-warning bg-opacity-25 text-warning font-monospace border border-warning">Tidak Terdeteksi</span>
+            {% endif %}
+          </td>
+          <td class="small fw-semibold">{{ log.plat or log.plate or '-' }}</td>
+          <td class="small">{{ log.jam_scan }}</td>
+          <td class="small">{{ log.update_time or '-' }}</td>
+          <td><span class="badge bg-dark border border-secondary text-adaptive">{{ log.time_diff or '-' }}</span></td>
+          <td class="small"><i class="fa-regular fa-image me-1 text-muted"></i>{{ log.image_count }}</td>
+          <td>
+            {% if log.status == 'OK' %}
+              <span class="badge badge-status-ok px-3 py-1.5 rounded-pill">OK</span>
+            {% else %}
+              <span class="badge badge-status-nok px-3 py-1.5 rounded-pill">NOK</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if status == 'ok' %}
+              <!-- TOMBOL & INDICATOR PENGIRIMAN DATA -->
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                {% if 'Revisi' in (log.keterangan or log.detail or '') or 'Ke-2' in (log.keterangan or log.detail or '') or 'Resend' in (log.keterangan or log.detail or '') %}
+                  <span class="badge bg-warning bg-opacity-25 text-warning border border-warning small">
+                    <i class="fa-solid fa-rotate-right me-1"></i>Pengiriman Ke-2 (Revisi)
+                  </span>
+                {% else %}
+                  <span class="badge bg-success bg-opacity-25 text-success border border-success small">
+                    <i class="fa-solid fa-check-double me-1"></i>Pengiriman Pertama
+                  </span>
+                {% endif %}
+
+                <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1" style="font-size: 0.75rem;" 
+                        onclick="showInfoModal('{{ log.scan_id }}', '{{ log.container }}', '{{ log.plat or '-' }}', '{{ log.jam_scan }}', '{{ log.update_time or '-' }}', '{{ log.time_diff or '-' }}', '{{ log.image_count }}', '{{ log.status }}', '{{ log.keterangan or log.detail }}')">
+                  <i class="fa-solid fa-circle-info me-1"></i> Detail
+                </button>
+              </div>
+            {% else %}
+              <span class="badge bg-danger bg-opacity-25 text-danger border border-danger small">
+                {{ log.keterangan or log.detail or 'Format / Data Tidak Valid' }}
+              </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center text-secondary py-4">Data log dengan status {{ status | upper }} tidak ditemukan.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL POPUP DETAIL INFORMASI PENGIRIMAN DATA -->
+<div class="modal fade" id="infoDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-info">
+          <i class="fa-solid fa-circle-info me-2"></i>Rincian Pengiriman Transaksi
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- HEADER RINGKASAN DATA -->
+        <div class="p-3 bg-secondary bg-opacity-10 rounded border border-secondary mb-3">
+          <div class="row g-2 text-start">
+            <div class="col-4"><span class="text-secondary small">ID Scan:</span><br><strong id="modal-scan-id" class="text-info font-monospace">-</strong></div>
+            <div class="col-4"><span class="text-secondary small">Container:</span><br><strong id="modal-container" class="font-monospace text-white">-</strong></div>
+            <div class="col-4"><span class="text-secondary small">No. Plat:</span><br><strong id="modal-plat" class="text-white">-</strong></div>
+          </div>
+        </div>
+
+        <div class="text-start space-y-3">
+          <!-- BLOK 1: PENGIRIMAN PERTAMA -->
+          <div id="blok-1-container" class="p-3 bg-dark border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-secondary">
+              <span class="fw-bold small text-adaptive"><i class="fa-solid fa-1 me-1"></i> PENGIRIMAN PERTAMA (AWAL)</span>
+              <span id="modal-status-awal" class="badge">OK</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-secondary small">Waktu Pemindaian:</span>
+              <span id="modal-jam-scan" class="small text-white">-</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-secondary small">Waktu Transmisi Awal:</span>
+              <span id="modal-jam-transmisi-awal" class="small text-white">-</span>
+            </div>
+            <div>
+              <span class="text-secondary small d-block mb-1">Catatan Respon Server:</span>
+              <div id="modal-ket-awal" class="p-2 bg-black bg-opacity-50 small rounded font-monospace">
+                -
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOK 2: STATUS SUBMIT ULANG / REVISI -->
+          <div id="blok-2-container" class="p-3 bg-dark border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-secondary">
+              <span class="fw-bold small text-adaptive"><i class="fa-solid fa-2 me-1"></i> STATUS SUBMIT ULANG / REVISI</span>
+              <span id="modal-status-akhir" class="badge">N/A</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-secondary small">Waktu Submit / Update:</span>
+              <span id="modal-jam-update" class="small text-white">-</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-secondary small">Selisih Waktu Transmisi:</span>
+              <span id="modal-time-diff" class="small text-info fw-bold">-</span>
+            </div>
+            <div>
+              <span class="text-secondary small d-block mb-1">Catatan Respon Server:</span>
+              <div id="modal-ket-akhir" class="p-2 bg-black bg-opacity-50 small rounded font-monospace">
+                -
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showInfoModal(scanId, container, plat, jamScan, jamUpdate, timeDiff, imageCount, status, detail) {
+  document.getElementById('modal-scan-id').textContent = scanId;
+  document.getElementById('modal-container').textContent = container || '-';
+  document.getElementById('modal-plat').textContent = plat || '-';
+
+  const b1Container = document.getElementById('blok-1-container');
+  const b2Container = document.getElementById('blok-2-container');
+  const badgeAwal = document.getElementById('modal-status-awal');
+  const badgeAkhir = document.getElementById('modal-status-akhir');
+  const ketAwal = document.getElementById('modal-ket-awal');
+  const ketAkhir = document.getElementById('modal-ket-akhir');
+
+  const isRevisi = detail.includes('Revisi') || detail.includes('Ke-2') || detail.includes('Resend');
+
+  if (isRevisi) {
+    b1Container.className = 'p-3 bg-dark border border-danger border-opacity-50 rounded';
+    badgeAwal.className = 'badge badge-status-nok';
+    badgeAwal.textContent = 'NOK';
+    document.getElementById('modal-jam-scan').textContent = jamScan || '-';
+    document.getElementById('modal-jam-transmisi-awal').textContent = jamScan || '-';
+    
+    let reasonAwal = 'Data Terkirim, Respon: Format / Data Tidak Valid';
+    if (detail.includes('Awalnya:')) {
+      reasonAwal = 'Data Terkirim, Respon: ' + detail.split('Awalnya:')[1].replace(')', '').trim();
+    }
+    ketAwal.className = 'p-2 bg-black bg-opacity-50 text-danger small rounded font-monospace';
+    ketAwal.textContent = reasonAwal;
+
+    b2Container.className = 'p-3 bg-dark border border-success border-opacity-50 rounded';
+    badgeAkhir.className = 'badge badge-status-ok';
+    badgeAkhir.textContent = 'BERHASIL DIREVISI';
+    document.getElementById('modal-jam-update').textContent = jamUpdate || '-';
+    document.getElementById('modal-time-diff').textContent = timeDiff || '-';
+    ketAkhir.className = 'p-2 bg-black bg-opacity-50 text-success small rounded font-monospace';
+    ketAkhir.textContent = detail || 'Resend Manual Berhasil (Data diperbaiki & diterima server)';
+  } else {
+    b1Container.className = 'p-3 bg-dark border border-success border-opacity-50 rounded';
+    badgeAwal.className = 'badge badge-status-ok';
+    badgeAwal.textContent = 'OK';
+    document.getElementById('modal-jam-scan').textContent = jamScan || '-';
+    document.getElementById('modal-jam-transmisi-awal').textContent = jamUpdate || jamScan || '-';
+    ketAwal.className = 'p-2 bg-black bg-opacity-50 text-success small rounded font-monospace';
+    ketAwal.textContent = 'Data Terkirim & Valid (Transaksi Sukses)';
+
+    b2Container.className = 'p-3 bg-dark border border-secondary border-opacity-50 rounded';
+    badgeAkhir.className = 'badge bg-secondary text-white border-0 shadow-none';
+    badgeAkhir.textContent = 'TIDAK PERLU REVISI';
+    document.getElementById('modal-jam-update').textContent = jamUpdate || '-';
+    document.getElementById('modal-time-diff').textContent = timeDiff || '-';
+    ketAkhir.className = 'p-2 bg-black bg-opacity-50 text-muted small rounded font-monospace';
+    ketAkhir.textContent = 'Data langsung valid pada pengiriman pertama (tanpa revisi)';
+  }
+
+  const modalElem = new bootstrap.Modal(document.getElementById('infoDetailModal'));
+  modalElem.show();
+}
+</script>
+{% endblock %}
