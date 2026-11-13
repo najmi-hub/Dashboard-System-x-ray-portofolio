@@ -1,4 +1,4 @@
-# 📊 Command Center V2 — X-Ray Monitoring & Operational Analytics
+# Command Center V2 — X-Ray Monitoring & Operational Analytics
 
 Aplikasi web berbasis **Flask** yang dirancang untuk memantau proses pemindaian kontainer X-Ray secara *realtime*, melacak status pengiriman data transaksi (`OK` / `NOK`) ke server pusat, memantau kondisi perangkat keras jaringan, serta mempermudah proses pengecekan ulang (*rescan*), pengiriman ulang (*resend*), dan ekspor laporan operasional.
 
