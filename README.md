@@ -103,3 +103,5 @@ Aplikasi web berbasis **Flask** yang dirancang untuk memantau proses pemindaian 
 ## 📄 Lisensi
 
 © 2026 PT Mitrabuana Widyasakti. Hak cipta dilindungi undang-undang.
+
+Instagram : @najmi_husbani
